@@ -115,16 +115,26 @@ were not reachable in this environment), evaluated on a held-out test split:
 
 | | |
 |---|---|
-| test macro F1 | **0.96** |
-| ECE after temperature scaling | 0.027 (from 0.097) |
-| ONNX FP32 / INT8 size | 4.5 MB / **1.4 MB** |
-| latency, INT8, 4-core x86 CPU | **~3 ms/image** including preprocessing |
-| noise / flat-grey / binary-texture inputs | **rejected** as out-of-distribution |
+| test accuracy / macro F1 | 0.991 / **0.991** |
+| top-3 accuracy | 1.000 |
+| category-head accuracy | 0.995 |
+| cross-category error rate | 0.005 |
+| ECE after temperature scaling | **0.017** (from 0.065) |
+| chosen abstention threshold | 0.30 — coverage 1.00, error-when-answering 0.009 |
+| ONNX FP32 / INT8 size | 4.52 MB / **1.45 MB** (3.1× smaller) |
+| latency p50 / p95, 96 px, single x86 core | **3.4 ms / 3.8 ms** per image, preprocessing included |
+| peak RSS | 75 MB |
+| noise, flat grey, binary texture | **rejected** as out-of-distribution |
+| blue sky, flat red | accepted as `background` — *"no crop leaf, retake"* |
+
+On this x86 host INT8's win is **size, not speed** (FP32 p50 3.4 ms vs INT8
+5.0 ms in the head-to-head). INT8's latency advantage is an ARM effect; measure
+on the actual board with `--compare` before choosing.
 
 These numbers demonstrate that the pipeline works end to end. **They are not a
 claim about field accuracy** — synthetic lesions are far easier than real ones,
-and transfer learning from ImageNet (unavailable here) is worth double digits on
-real data.
+and transfer learning from ImageNet (unavailable in this environment) is worth
+double digits on real data.
 
 ---
 
@@ -134,14 +144,25 @@ real data.
 
 ```
 export/
-├── cropguard.onnx        # FP32, weights embedded (never a sidecar .data file)
-├── cropguard.int8.onnx   # INT8, statically calibrated on real training images
-├── cropguard.ptl         # TorchScript, for an in-app Android/iOS model
-├── model_card.json       # label order, preprocessing, temperature, threshold
-├── taxonomy.json         # agronomic metadata for the classes in this model
-├── advisory.json         # the farmer-facing recommendations
-└── ood.npz               # novelty detector (class means + shared precision)
+├── cropguard.onnx            # FP32, weights embedded (never a sidecar .data file)
+├── cropguard.int8.onnx       # INT8, statically calibrated on real training images
+├── cropguard.ptl             # TorchScript, for an in-app Android/iOS model
+├── cropguard.ood.npz         # novelty detector fitted on the FP32 artefact
+├── cropguard.int8.ood.npz    #   ... and on the INT8 artefact (see below)
+├── model_card.json           # label order, preprocessing, temperature, threshold
+├── taxonomy.json             # agronomic metadata for the classes in this model
+└── advisory.json             # the farmer-facing recommendations
 ```
+
+**The novelty detector is refitted per artefact**, on the exact numerics that
+will run in the field. This is not belt-and-braces: a detector fitted on the
+FP32 embeddings does not transfer to the quantised model. INT8 embeddings have
+the same mean and standard deviation, so nothing looks wrong — but Mahalanobis
+distance amplifies the perturbation, and in testing the median in-distribution
+distance rose from 45 to 250 against a threshold of 217. The device would have
+**rejected 76% of real farm photos** while reporting 0.99 confidence on them.
+Export now refits and then checks that the detector still separates, and says
+so loudly when it does not.
 
 Every artefact is **verified at export time**, not assumed: ONNX outputs are
 compared against torch, and INT8 against FP32 on real images where FP32 has

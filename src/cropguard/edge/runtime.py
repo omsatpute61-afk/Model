@@ -118,7 +118,13 @@ class EdgeClassifier:
             self.card.policy.min_confidence = min_confidence
 
         self.ood: MahalanobisOOD | None = None
-        ood_path = self.bundle_dir / OOD_FILENAME
+        # Prefer the detector fitted on THIS artefact's numerics. A detector
+        # fitted on the FP32/torch model does not transfer to the quantised one
+        # - it rejected 76% of real photos in testing - so the per-artefact file
+        # wins, and the generic one is only a fallback.
+        ood_path = self.bundle_dir / f"{self._model_stem(model_file, backend)}.ood.npz"
+        if not ood_path.exists():
+            ood_path = self.bundle_dir / OOD_FILENAME
         if use_ood and ood_path.exists():
             try:
                 self.ood = MahalanobisOOD.load(ood_path)
@@ -147,6 +153,11 @@ class EdgeClassifier:
         )
 
     # -- loading ---------------------------------------------------------
+    def _model_stem(self, model_file: str | None, backend: str) -> str:
+        """Stem of the artefact that will actually be loaded."""
+        path, _ = self._resolve_backend(model_file, backend)
+        return path.stem
+
     def _resolve_backend(self, model_file: str | None, backend: str) -> tuple[Path, str]:
         if model_file:
             path = self.bundle_dir / model_file

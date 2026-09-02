@@ -1,7 +1,10 @@
 """The whole pipeline in one test: data -> train -> export -> device -> advice.
 
-Deliberately small (four classes, 64px, ~20 epochs) so it runs in CI in a
-couple of minutes. It is sized to the point where the model actually learns
+Deliberately small (four classes, 64px) so it runs in CI in a couple of
+minutes, but sized past the point where the model actually learns - from a
+random initialisation, BatchNorm running statistics keep validation at chance
+for the first several epochs, and a run that stops inside that window
+exercises none of the accept/reject logic. It is sized to the point where the model actually learns
 something: a run that stays at chance exercises none of the accept/reject
 logic and would pass while the device refuses every photo. It does not check accuracy - synthetic data at this scale
 proves nothing about field performance. It checks that the *contract* holds at
@@ -37,7 +40,7 @@ def trained_run(tmp_path_factory):
     from cropguard.train import train
 
     root = tmp_path_factory.mktemp("e2e")
-    data = generate_dataset(root / "images", class_ids=CLASSES, per_class=64, size=64, seed=11)
+    data = generate_dataset(root / "images", class_ids=CLASSES, per_class=80, size=64, seed=11)
     records, unmapped = scan_image_folder(data)
     assert not unmapped
     records = stratified_group_split(records, 0.2, 0.2, seed=3)
@@ -50,10 +53,10 @@ def trained_run(tmp_path_factory):
     cfg.data.image_size = 64
     cfg.data.batch_size = 8
     cfg.data.num_workers = 0
-    cfg.data.aug_strength = 0.2
+    cfg.data.aug_strength = 0.15
     cfg.model.pretrained = False
     cfg.model.embedding_dim = 32
-    cfg.optim.epochs = 22
+    cfg.optim.epochs = 45
     cfg.optim.lr = 3e-3
     cfg.optim.early_stopping_patience = 0
     cfg.optim.amp = False
@@ -96,6 +99,41 @@ def test_bundle_is_self_contained(bundle):
         assert (bundle / name).exists(), f"{name} missing from the deployment bundle"
     # weights must be embedded, not left in a sidecar the deployer forgets
     assert not (bundle / "cropguard.onnx.data").exists()
+
+
+def test_novelty_detector_is_refitted_per_artifact(bundle):
+    """Regression for the worst bug found in this project.
+
+    The detector fitted on torch embeddings does not transfer to the quantised
+    model: INT8 embeddings have the same mean and standard deviation, but
+    Mahalanobis distance amplifies the perturbation, and the device rejected
+    **76% of real farm photos** while reporting 0.99 confidence on them.
+    """
+    from cropguard.ood import MahalanobisOOD
+
+    for stem in ("cropguard", "cropguard.int8"):
+        path = bundle / f"{stem}.ood.npz"
+        assert path.exists(), f"{path.name} missing - the artefact would use a mismatched detector"
+        assert MahalanobisOOD.load(path).enabled
+
+
+def test_quantised_model_does_not_reject_its_own_training_data(bundle, trained_run):
+    """The INT8 model is what the runtime picks by default. If its novelty
+    threshold is mismatched, the device refuses real photos in the field."""
+    from cropguard.data.manifest import read_manifest
+    from cropguard.edge.runtime import EdgeClassifier
+
+    _, manifest = trained_run
+    records = [r for r in read_manifest(manifest) if r.split == "train"][:40]
+    for model_file in ("cropguard.onnx", "cropguard.int8.onnx"):
+        clf = EdgeClassifier(bundle, model_file=model_file, backend="onnx")
+        rejected = sum(
+            1 for r in records if not clf.diagnose(r.path, with_advisory=False).accepted
+        )
+        assert rejected < len(records) * 0.25, (
+            f"{model_file} rejected {rejected}/{len(records)} of its own training "
+            "images - the novelty threshold does not match this artefact"
+        )
 
 
 def test_int8_is_smaller_than_fp32(bundle):

@@ -42,6 +42,12 @@ LOGGER = logging.getLogger("cropguard.export")
 
 DEFAULT_OPSET = 13
 
+#: How many images to push through the exported artefact when refitting the
+#: novelty detector. The embedding covariance needs samples well in excess of
+#: its dimension; a few hundred is not enough.
+OOD_FIT_IMAGES = 4000
+OOD_CALIBRATION_IMAGES = 1000
+
 
 @dataclass
 class ExportResult:
@@ -350,6 +356,7 @@ def export_run(
     opset: int = DEFAULT_OPSET,
     calibration_manifest: str | Path | None = None,
     calibration_size: int = 64,
+    ood_percentile: float = 97.5,
 ) -> dict:
     from .evaluate import load_run
 
@@ -389,6 +396,30 @@ def export_run(
     if "onnx" not in formats and onnx_path.exists():
         onnx_path.unlink()  # only produced as an intermediate for int8
 
+    # Refit the novelty detector per ONNX artefact, on that artefact's own
+    # numerics. See refit_ood_for_artifact for why this is not optional.
+    # Use as much of the training set as is practical. The covariance is
+    # 128x128; fitting it on a few hundred samples is what produced a useless
+    # detector (threshold 5560, zero noise rejection) before this was raised.
+    # The cost is one forward pass per image - seconds, once, at export time.
+    train_records = _split_records(calibration_manifest, run_dir, "train", OOD_FIT_IMAGES)
+    val_records = _split_records(calibration_manifest, run_dir, "val", OOD_CALIBRATION_IMAGES)
+    for artefact in ("cropguard.onnx", "cropguard.int8.onnx"):
+        path = out_dir / artefact
+        if not path.exists():
+            continue
+        try:
+            detector, detail = refit_ood_for_artifact(
+                path, card, train_records, val_records, ood_percentile
+            )
+        except Exception as exc:  # noqa: BLE001 - never fail the export on this
+            detector, detail = None, f"refit failed: {exc}"
+        if detector is not None:
+            detector.save(out_dir / f"{path.stem}.ood.npz")
+            LOGGER.info("ood (%s): %s", artefact, detail)
+        else:
+            LOGGER.warning("ood (%s): %s", artefact, detail)
+
     card.save(out_dir / CARD_FILENAME)
     ood_src = run_dir / OOD_FILENAME
     if ood_src.exists():
@@ -419,10 +450,8 @@ def export_run(
     return summary
 
 
-def _calibration_images(
-    manifest: str | Path | None, run_dir: Path, limit: int
-) -> list[Path] | None:
-    """Real training images make INT8 calibration meaningful."""
+def _split_records(manifest: str | Path | None, run_dir: Path, split: str, limit: int):
+    """Sample records from one split, spread across classes rather than the first N."""
     from .data.manifest import read_manifest
 
     if manifest is None:
@@ -431,14 +460,101 @@ def _calibration_images(
             try:
                 manifest = json.loads(cfg_path.read_text())["data"]["manifest"]
             except Exception:  # noqa: BLE001
-                return None
+                return []
     if manifest is None or not Path(manifest).exists():
-        return None
-    records = [r for r in read_manifest(manifest) if r.split == "train"]
+        return []
+    records = [r for r in read_manifest(manifest) if r.split == split]
     if not records:
-        return None
-    step = max(1, len(records) // limit)  # spread across classes, not the first N
-    return [Path(r.path) for r in records[::step][:limit]]
+        return []
+    records.sort(key=lambda r: (r.class_id, r.path))
+    step = max(1, len(records) // limit)
+    return records[::step][:limit]
+
+
+def _calibration_images(
+    manifest: str | Path | None, run_dir: Path, limit: int
+) -> list[Path] | None:
+    """Real training images make INT8 calibration meaningful."""
+    records = _split_records(manifest, run_dir, "train", limit)
+    return [Path(r.path) for r in records] or None
+
+
+def _embed_with_onnx(onnx_path: Path, card: ModelCard, paths: list[Path], batch: int = 32):
+    """Run the exported artefact and return its embedding output."""
+    import onnxruntime as ort
+
+    from .edge.preprocess import load_and_preprocess
+
+    sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
+    if len(sess.get_outputs()) < 4:
+        raise RuntimeError("exported model has no embedding output")
+    name = sess.get_inputs()[0].name
+
+    out = []
+    for i in range(0, len(paths), batch):
+        chunk = paths[i : i + batch]
+        x = np.concatenate([load_and_preprocess(p, card.preprocess) for p in chunk], axis=0)
+        out.append(sess.run(None, {name: x})[3])
+    return np.concatenate(out, axis=0)
+
+
+def refit_ood_for_artifact(
+    onnx_path: Path,
+    card: ModelCard,
+    train_records,
+    val_records,
+    percentile: float = 97.5,
+) -> tuple["MahalanobisOOD | None", str]:
+    """Refit the novelty detector on the embeddings THIS artefact produces.
+
+    A detector fitted on torch embeddings does not transfer to a quantised
+    model. Measured on this project: the INT8 model's embeddings have the same
+    mean and standard deviation as the FP32 ones, so nothing looks wrong - but
+    Mahalanobis distance amplifies small perturbations along low-variance
+    directions, and the median in-distribution distance rose from 45 to 250
+    against a threshold of 217. The device would have rejected **76% of real
+    farm photos** while reporting 0.99 confidence on them.
+
+    So the detector is refitted per artefact, on the exact numerics that will
+    run in the field, and then checked for whether it still separates anything.
+    """
+    from .ood import MahalanobisOOD
+
+    if not train_records:
+        return None, "no training records available to refit the detector"
+
+    index = {c: i for i, c in enumerate(card.class_ids)}
+    train_paths = [Path(r.path) for r in train_records if r.class_id in index]
+    train_labels = np.array([index[r.class_id] for r in train_records if r.class_id in index])
+    if len(train_paths) < 2 * len(card.class_ids):
+        return None, f"only {len(train_paths)} usable images - too few to refit"
+
+    emb = _embed_with_onnx(onnx_path, card, train_paths)
+    detector = MahalanobisOOD.fit(emb, train_labels, len(card.class_ids), list(card.class_ids))
+
+    val_paths = [Path(r.path) for r in val_records if r.class_id in index] or train_paths
+    val_emb = _embed_with_onnx(onnx_path, card, val_paths)
+    stats = detector.calibrate(val_emb, percentile)
+    if not detector.enabled:
+        return detector, f"detector disabled: {detector.stats.get('disabled_reason', '')}"
+
+    # Does it still separate? Random pixels stand in for "unlike any crop leaf".
+    size = card.preprocess.image_size
+    noise = np.random.default_rng(0).standard_normal((16, 3, size, size)).astype(np.float32)
+    import onnxruntime as ort
+
+    sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
+    noise_emb = sess.run(None, {sess.get_inputs()[0].name: noise})[3]
+    noise_reject = float(detector.is_ood(noise_emb).mean())
+    in_reject = float(stats.val_reject_rate)
+
+    detail = (
+        f"threshold {detector.threshold:.0f}; rejects {in_reject:.0%} of real "
+        f"images and {noise_reject:.0%} of noise"
+    )
+    if noise_reject < 0.5 or in_reject > 0.15:
+        detail += " - WEAK separation, treat OOD rejection as unreliable"
+    return detector, detail
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -451,6 +567,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--opset", type=int, default=DEFAULT_OPSET)
     p.add_argument("--calibration-manifest")
     p.add_argument("--calibration-size", type=int, default=64)
+    p.add_argument("--ood-percentile", type=float, default=97.5,
+                   help="share of real images the novelty detector should accept")
     p.add_argument("--log-level", default="INFO")
     args = p.parse_args(argv)
 
@@ -464,6 +582,7 @@ def main(argv: list[str] | None = None) -> int:
         opset=args.opset,
         calibration_manifest=args.calibration_manifest,
         calibration_size=args.calibration_size,
+        ood_percentile=args.ood_percentile,
     )
     print(json.dumps(summary, indent=2))
     return 0 if summary["all_verified"] else 1
