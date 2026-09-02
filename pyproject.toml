@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cropguard"
+version = "0.1.0"
+description = "Edge AI pest and disease detection for the Smart Farming Assistant"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "Pillow>=10.0"]
+
+[project.optional-dependencies]
+train = ["torch>=2.1", "torchvision>=0.16", "pyyaml>=6.0", "onnx>=1.15", "onnxruntime>=1.17", "onnxscript>=0.1"]
+edge = ["onnxruntime>=1.17"]
+dev = ["pytest>=7.4"]
+
+[project.scripts]
+cropguard-train = "cropguard.train:main"
+cropguard-evaluate = "cropguard.evaluate:main"
+cropguard-export = "cropguard.export:main"
+cropguard-benchmark = "cropguard.benchmark:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+cropguard = ["resources/*.json"]

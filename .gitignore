@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Training outputs and datasets are reproducible; they do not belong in git.
+artifacts/
+*.onnx
+*.onnx.data
+*.ptl
+*.pt
+*.npz

@@ -1,0 +1,64 @@
+# CropGuard - default training configuration.
+#
+# Assumes a real dataset (PlantVillage + district scouting photos) and a GPU.
+# For a from-scratch / CPU / offline run see configs/edge_nano.yaml.
+#
+# Override anything from the command line:
+#   python -m cropguard.train --config configs/default.yaml --set optim.lr=1e-3
+
+run_name: cropguard
+output_dir: artifacts/runs
+seed: 1337
+deterministic: false
+
+data:
+  manifest: artifacts/data/manifest.csv
+  image_size: 224
+  batch_size: 32
+  num_workers: 4
+  # Long-tailed archives (thousands of healthy frames, dozens of a rare pest)
+  # need this on, or the model learns to answer "healthy".
+  balanced_sampling: true
+  # 1.0 = full field simulation: shadow, glare, motion blur, occlusion, JPEG.
+  # Lower it only if your training photos were already taken in the field.
+  aug_strength: 1.0
+  taxonomy: null            # null -> the bundled 70-class taxonomy
+
+model:
+  backbone: mobilenet_v3_small   # ~1.1M params; the Raspberry-Pi default
+  pretrained: true               # ImageNet transfer is worth double digits of accuracy
+  dropout: 0.2
+  embedding_dim: 128
+
+optim:
+  epochs: 30
+  lr: 0.0003
+  backbone_lr_scale: 0.1     # protect pretrained features from the head's LR
+  weight_decay: 0.0001
+  warmup_epochs: 2
+  min_lr_scale: 0.02
+  grad_clip: 1.0
+  label_smoothing: 0.05
+  use_focal: false           # turn on for a severely long-tailed archive
+  focal_gamma: 2.0
+  category_weight: 0.3       # coarse head: the fallback when the fine head is unsure
+  severity_weight: 0.2
+  mixup_alpha: 0.0           # 0.2 helps on small district datasets
+  ema_decay: 0.999
+  use_ema: true
+  freeze_epochs: 1           # head-only warm start (auto-disabled if not pretrained)
+  unfreeze_blocks: 0         # 0 = thaw the whole trunk after the warm start
+  early_stopping_patience: 8
+  amp: true
+
+policy:
+  # At most 10% of the answers we actually give may be wrong, and we must still
+  # answer at least half the photos.
+  max_selective_error: 0.10
+  min_coverage: 0.50
+  # Floor on the abstention threshold. Without it the search picks a near-zero
+  # threshold that satisfies the error budget and destroys OOD rejection.
+  min_threshold: 0.30
+  calibrate: true
+  fit_ood: true              # Mahalanobis novelty detector over embeddings
+  ood_percentile: 97.5

@@ -1,0 +1,351 @@
+{
+  "schema_version": 1,
+  "disclaimer": "Advisories are decision support, not a prescription. Insecticide and fungicide choice, dose, water volume and pre-harvest interval must follow the product label and the recommendations of the State Agriculture Department / local KVK. Always confirm a high-impact diagnosis with an extension officer before a field-wide spray.",
+  "urgency_levels": ["none", "info", "watch", "warning", "critical"],
+  "defaults": {
+    "disease": {
+      "urgency": "warning", "action": "scout_and_protect", "recheck_hours": 48,
+      "headline": "Possible disease detected",
+      "steps": [
+        "Walk a diagonal transect and record how many plants in 100 show the same symptom.",
+        "Remove and destroy (do not compost) severely affected leaves and plants.",
+        "Avoid overhead irrigation and stop working in the field while the canopy is wet."
+      ],
+      "ipm": ["Improve air movement by weeding and correct spacing.", "Switch the next irrigation to furrow or drip."],
+      "chemical_guidance": "Use a protectant fungicide/bactericide approved for this crop-disease pair in your state; rotate the mode-of-action group between sprays.",
+      "irrigation_advice": "Keep the canopy dry - irrigate early in the day, at the root zone.",
+      "escalate_if": "More than 10% of plants affected, or the spot count doubles within 48 hours."
+    },
+    "pest": {
+      "urgency": "watch", "action": "scout_and_count", "recheck_hours": 24,
+      "headline": "Pest activity detected",
+      "steps": [
+        "Count the pest on 3 leaves each from 10 randomly chosen plants and compare with the economic threshold.",
+        "Install or check pheromone / yellow sticky traps to confirm the trend.",
+        "Treat only the affected patch first - do not spray the whole field on a single detection."
+      ],
+      "ipm": ["Conserve natural enemies; avoid broad-spectrum insecticides.", "Remove alternate weed hosts on bunds."],
+      "chemical_guidance": "Spray only after the economic threshold is crossed, using an insecticide approved for this crop-pest pair; rotate chemistry to slow resistance.",
+      "irrigation_advice": "No irrigation change required for this detection alone.",
+      "escalate_if": "The economic threshold is crossed, or counts rise on two consecutive scouting rounds."
+    },
+    "deficiency": {
+      "urgency": "info", "action": "correct_nutrition", "recheck_hours": 168,
+      "headline": "Possible nutrient deficiency",
+      "steps": [
+        "Confirm the pattern - which leaves (old vs new) and whether the veins stay green.",
+        "Check the latest soil test; sample again if it is more than one season old.",
+        "Correct with a foliar spray for a quick response and adjust the soil dose for the next split."
+      ],
+      "ipm": [],
+      "chemical_guidance": "Follow the soil-test-based recommendation for the crop; foliar sprays correct symptoms but do not replace the soil dose.",
+      "irrigation_advice": "Keep moisture adequate - nutrient uptake stops in dry soil.",
+      "escalate_if": "Symptoms persist 10-14 days after correction, which suggests a pH or root problem rather than supply."
+    },
+    "abiotic": {
+      "urgency": "warning", "action": "adjust_irrigation", "recheck_hours": 12,
+      "headline": "Crop stress detected",
+      "steps": ["Check soil moisture at root depth before acting.", "Compare with the weather forecast for the next 48 hours."],
+      "ipm": [],
+      "chemical_guidance": "No plant protection product is indicated for abiotic stress.",
+      "irrigation_advice": "Adjust the irrigation schedule as advised below.",
+      "escalate_if": "Symptoms persist after the root zone is at field capacity."
+    },
+    "healthy": {
+      "urgency": "none", "action": "continue_monitoring", "recheck_hours": 72,
+      "headline": "Crop looks healthy",
+      "steps": ["Continue the normal scouting round."],
+      "ipm": [], "chemical_guidance": "No spray indicated.",
+      "irrigation_advice": "Follow the existing irrigation schedule.",
+      "escalate_if": "Any new spotting, curling or discolouration appears."
+    },
+    "background": {
+      "urgency": "none", "action": "retake_photo", "recheck_hours": 0,
+      "headline": "No crop leaf in the picture",
+      "steps": ["Hold the camera 20-30 cm from a single leaf, fill the frame, and avoid direct shadow."],
+      "ipm": [], "chemical_guidance": "", "irrigation_advice": "", "escalate_if": ""
+    }
+  },
+  "classes": {
+    "tomato__late_blight": {
+      "urgency": "critical", "action": "spray_within_24h", "recheck_hours": 24,
+      "headline": "Late blight suspected - act today",
+      "farmer_message": "Late blight suspected on tomato. It can destroy the field in 3-5 days of cool wet weather. Remove affected plants and apply a protectant spray today.",
+      "steps": [
+        "Uproot and bury or burn badly affected plants NOW - do not leave them on the bund.",
+        "Apply a protectant fungicide the same day, covering the underside of the leaves.",
+        "Stop overhead irrigation completely until the weather dries.",
+        "Warn neighbouring farmers - blight spreads field to field on the wind."
+      ],
+      "ipm": ["Destroy volunteer potato/tomato plants nearby.", "Widen spacing at the next planting and use resistant varieties."],
+      "chemical_guidance": "A protectant (contact) fungicide first, followed by a systemic from a different mode-of-action group if wet weather continues. Confirm the product and dose with your KVK.",
+      "irrigation_advice": "Suspend overhead irrigation; irrigate in furrows early in the morning only.",
+      "escalate_if": "New lesions appear on upper leaves within 24 hours."
+    },
+    "potato__late_blight": {
+      "urgency": "critical", "action": "spray_within_24h", "recheck_hours": 24,
+      "headline": "Late blight suspected - act today",
+      "farmer_message": "Late blight suspected on potato. Spray a protectant today and stop overhead irrigation - the crop can be lost within a week in cool humid weather.",
+      "steps": [
+        "Apply a protectant fungicide today with full underside coverage.",
+        "Remove and destroy affected haulm; do not dump it at the field edge.",
+        "Plan to dehaulm 2-3 weeks before harvest to protect the tubers.",
+        "Do not irrigate overhead while humidity stays above 85%."
+      ],
+      "ipm": ["Earth up well so spores cannot reach the tubers.", "Use certified disease-free seed tubers next season."],
+      "chemical_guidance": "Protectant contact fungicide first; alternate mode-of-action groups if the wet spell continues. Confirm dose with your KVK.",
+      "irrigation_advice": "Suspend irrigation during the wet spell; resume light furrow irrigation once the canopy dries.",
+      "escalate_if": "Lesions spread to stems, or more than 5% of the canopy is affected."
+    },
+    "rice__blast": {
+      "urgency": "critical", "action": "spray_within_24h", "recheck_hours": 24,
+      "headline": "Rice blast suspected",
+      "farmer_message": "Rice blast suspected. Stop any further nitrogen top-dressing and treat before the panicle stage - neck blast can empty the grain.",
+      "steps": [
+        "Stop nitrogen top-dressing immediately - excess N drives blast.",
+        "Drain and re-flood the field to break the humid micro-climate.",
+        "Treat at boot-leaf stage to protect the neck if lesions are on the flag leaf."
+      ],
+      "ipm": ["Balance N with potash and silicon.", "Choose blast-resistant varieties next season and treat the seed."],
+      "chemical_guidance": "A systemic fungicide recommended for blast in your state, applied at the boot stage; confirm with the KVK.",
+      "irrigation_advice": "Alternate wetting and drying rather than continuous deep flooding.",
+      "escalate_if": "Lesions reach the flag leaf or the neck of emerging panicles."
+    },
+    "rice__bacterial_leaf_blight": {
+      "urgency": "warning", "action": "cultural_control_no_fungicide", "recheck_hours": 48,
+      "headline": "Bacterial leaf blight suspected",
+      "farmer_message": "Bacterial leaf blight suspected. Fungicides do not work on this. Drain the field, stop nitrogen, and avoid moving through the wet crop.",
+      "steps": [
+        "Drain the standing water for 2-3 days where the crop stage allows.",
+        "Stop nitrogen top-dressing until the spread stops.",
+        "Do not walk through the wet crop - the bacteria spread on leaves and tools."
+      ],
+      "ipm": ["Avoid clipping seedling tips at transplanting.", "Use resistant varieties and clean seed next season."],
+      "chemical_guidance": "This is bacterial - ordinary fungicides are ineffective. Use only a bactericide approved in your state, if any is recommended.",
+      "irrigation_advice": "Drain; keep shallow water rather than deep flooding.",
+      "escalate_if": "Wilting of whole seedlings (kresek) appears, or more than 20% leaf area is affected."
+    },
+    "tomato__yellow_leaf_curl_virus": {
+      "urgency": "critical", "action": "rogue_and_control_vector", "recheck_hours": 24,
+      "headline": "Leaf curl virus suspected - control whitefly",
+      "farmer_message": "Tomato leaf curl virus suspected. There is no cure for the virus - remove infected plants and control whitefly at once to stop it spreading.",
+      "steps": [
+        "Uproot and destroy infected plants - they will not recover and act as a source.",
+        "Control whitefly immediately; the virus spreads only through the vector.",
+        "Install yellow sticky traps at 10-12 per acre just above the canopy.",
+        "Remove parthenium and other weed hosts on the bunds."
+      ],
+      "ipm": ["Use a border crop of maize/sorghum as a barrier.", "Raise nurseries under 40-mesh insect-proof net.", "Prefer tolerant hybrids next season."],
+      "chemical_guidance": "Target the whitefly vector, rotating insecticide groups. No product cures the virus itself.",
+      "irrigation_advice": "Maintain even moisture; stressed plants show worse symptoms.",
+      "escalate_if": "More than 10% of plants show curling, or whitefly counts keep rising."
+    },
+    "cotton__leaf_curl_virus": {
+      "urgency": "critical", "action": "rogue_and_control_vector", "recheck_hours": 24,
+      "headline": "Cotton leaf curl virus suspected",
+      "farmer_message": "Cotton leaf curl suspected. Remove infected plants and bring whitefly under control now - the virus has no cure.",
+      "steps": [
+        "Rogue out infected plants early in the season.",
+        "Bring whitefly below threshold; that is the only way to stop spread.",
+        "Destroy alternate hosts (bhindi, weeds) around the field."
+      ],
+      "ipm": ["Avoid excessive nitrogen, which favours whitefly.", "Sow recommended tolerant varieties at the recommended date."],
+      "chemical_guidance": "Vector management only, rotating insecticide groups; consult your KVK for the current state advisory.",
+      "irrigation_advice": "Avoid moisture stress, which worsens symptom expression.",
+      "escalate_if": "Incidence crosses 10% of plants, or new flushes emerge already curled."
+    },
+    "sugarcane__red_rot": {
+      "urgency": "critical", "action": "rogue_and_quarantine", "recheck_hours": 48,
+      "headline": "Red rot suspected - do not use this cane as seed",
+      "farmer_message": "Red rot suspected in sugarcane. Split a drying cane to confirm the red tissue with white patches. Remove affected clumps with roots and never use this field's cane as seed.",
+      "steps": [
+        "Split a drying cane lengthwise and check for red tissue crossed by white patches.",
+        "Uproot affected clumps along with roots and burn them.",
+        "Do not take seed cane from this field.",
+        "Stop irrigation flowing from the affected patch to healthy areas."
+      ],
+      "ipm": ["Plant only resistant varieties and heat/fungicide-treated setts.", "Rotate with rice or a non-host crop for 2 seasons."],
+      "chemical_guidance": "There is no effective standing-crop cure. Management is varietal resistance, sett treatment and sanitation.",
+      "irrigation_advice": "Improve drainage; avoid water flowing from infected to healthy patches.",
+      "escalate_if": "More than 5% clumps affected - plan a variety change for the next planting."
+    },
+    "grape__downy_mildew": {
+      "urgency": "critical", "action": "spray_within_24h", "recheck_hours": 24,
+      "headline": "Downy mildew suspected - protect before the next rain",
+      "farmer_message": "Downy mildew suspected on grape. Spray a protectant before the next rain or dew and improve canopy air movement.",
+      "steps": [
+        "Apply a protectant cover spray before the next expected rain or heavy dew.",
+        "Remove affected leaves and open up the canopy for airflow.",
+        "Avoid evening irrigation that leaves the canopy wet overnight."
+      ],
+      "ipm": ["Manage canopy density and shoot positioning.", "Track leaf wetness hours - infection needs a wet period."],
+      "chemical_guidance": "Protectant before rain, systemic curative only within the recommended window; rotate groups and respect residue limits for export.",
+      "irrigation_advice": "Irrigate at the root zone in the morning; never wet the canopy in the evening.",
+      "escalate_if": "Oil spots appear on more than 5% of leaves or on the bunches."
+    },
+    "pest__fall_armyworm": {
+      "urgency": "warning", "action": "targeted_whorl_application", "recheck_hours": 24,
+      "headline": "Fall armyworm detected",
+      "farmer_message": "Fall armyworm detected in maize. Check 10 plants for whorl damage. If 5 or more in 100 are damaged, treat the whorl of affected plants only - not the whole field.",
+      "steps": [
+        "Count damaged whorls in 100 plants to get the infestation percentage.",
+        "Hand-pick and crush egg masses and large larvae in a small field.",
+        "Apply into the WHORL of affected plants only - the larva sits inside, blanket spraying wastes chemical.",
+        "Place 5 pheromone traps per acre to track moth flight."
+      ],
+      "ipm": [
+        "Deep summer ploughing to expose pupae.",
+        "Release Trichogramma cards where locally available.",
+        "Apply dry sand + ash into the whorl as a low-cost first response in small plots.",
+        "Intercrop with pulses and keep field borders weed-free."
+      ],
+      "chemical_guidance": "Only above the 5-10% whorl damage threshold, with a whorl-directed application of an approved insecticide; rotate groups every application.",
+      "irrigation_advice": "No change needed for the pest itself.",
+      "escalate_if": "Damage crosses 10% of plants, or larvae reach the tassel/cob stage."
+    },
+    "pest__brown_planthopper": {
+      "urgency": "critical", "action": "drain_and_targeted_spray", "recheck_hours": 12,
+      "headline": "Brown planthopper - hopper burn risk",
+      "farmer_message": "Brown planthopper detected in rice. Part the hills and count at the base. Drain the field for 3-4 days and stop nitrogen. Circular dried patches mean hopper burn is starting.",
+      "steps": [
+        "Part the canopy and count hoppers at the base of 20 hills, just above the water line.",
+        "Drain the field for 3-4 days - this alone knocks the population back.",
+        "Stop nitrogen top-dressing.",
+        "If spraying, direct the nozzle at the BASE of the plants, not the canopy top."
+      ],
+      "ipm": [
+        "Never use a broad-spectrum insecticide - it kills spiders and mirid bugs and causes resurgence.",
+        "Keep 30 cm alleys every 2-3 m for aeration and spray access.",
+        "Avoid dense planting and excess nitrogen."
+      ],
+      "chemical_guidance": "Only above 10 hoppers/hill (pre-flowering) with natural enemies absent; use a selective insecticide directed at the plant base.",
+      "irrigation_advice": "Drain for 3-4 days, then keep shallow intermittent water.",
+      "escalate_if": "Circular yellow-brown patches (hopper burn) appear anywhere in the field - treat as an emergency."
+    },
+    "pest__whitefly": {
+      "urgency": "warning", "action": "vector_control", "recheck_hours": 24,
+      "headline": "Whitefly detected - virus vector",
+      "farmer_message": "Whitefly detected. Besides sucking sap it spreads leaf curl virus. Put up yellow sticky traps and check the underside of the top 3 leaves.",
+      "steps": [
+        "Count adults on the underside of the top 3 leaves of 10 plants in the early morning.",
+        "Install yellow sticky traps at 10-12 per acre just above the canopy.",
+        "Remove and destroy weed hosts on the bunds."
+      ],
+      "ipm": ["Spray neem oil covering leaf undersides.", "Avoid excess nitrogen.", "Conserve Encarsia and predatory beetles by avoiding broad-spectrum sprays."],
+      "chemical_guidance": "Above 6 adults/leaf, use an approved insecticide with good underside coverage; rotate groups strictly - whitefly develops resistance fast.",
+      "irrigation_advice": "No change needed for the pest itself.",
+      "escalate_if": "Counts rise for two consecutive scouting rounds, or leaf-curl symptoms start appearing."
+    },
+    "pest__pink_bollworm": {
+      "urgency": "critical", "action": "trap_and_targeted_spray", "recheck_hours": 24,
+      "headline": "Pink bollworm detected",
+      "farmer_message": "Pink bollworm detected in cotton. Open 20 green bolls to check for pink larvae and count rosette flowers. Destroy affected material and never extend the crop beyond the recommended season.",
+      "steps": [
+        "Open 20 green bolls from across the field and record how many have larvae.",
+        "Collect and destroy rosetted flowers and damaged bolls.",
+        "Install 2 pheromone traps per acre and count moths nightly.",
+        "Terminate the crop on time - carry-over crops build the next season's population."
+      ],
+      "ipm": ["Release Trichogramma bactrae where available.", "Do not ratoon cotton.", "Deep ploughing after harvest to destroy carry-over larvae."],
+      "chemical_guidance": "Only after 8 moths/trap/night for 3 nights or 10% rosette flowers; rotate insecticide groups every spray.",
+      "irrigation_advice": "Avoid late irrigation that extends the crop past its recommended duration.",
+      "escalate_if": "More than 10% of opened bolls contain larvae."
+    },
+    "pest__spider_mite": {
+      "urgency": "warning", "action": "targeted_miticide", "recheck_hours": 24,
+      "headline": "Spider mite infestation",
+      "farmer_message": "Spider mites detected. They multiply in hot dry weather and after broad-spectrum sprays. Do not use a normal insecticide - it makes mites worse.",
+      "steps": [
+        "Check leaf undersides with a hand lens for mites and fine webbing.",
+        "Wash the canopy with a strong water spray in a small plot.",
+        "Treat the affected patch with a specific miticide, covering leaf undersides."
+      ],
+      "ipm": ["Stop broad-spectrum insecticides - they kill predatory mites and cause flare-ups.", "Keep the crop free of moisture stress.", "Control dust on field roads."],
+      "chemical_guidance": "Use a specific acaricide, not a general insecticide, and alternate the group between applications.",
+      "irrigation_advice": "Avoid moisture stress - dry stressed plants favour mites.",
+      "escalate_if": "Webbing spreads across the upper canopy or bronzing covers more than 10% of leaf area."
+    },
+    "deficiency__nitrogen": {
+      "urgency": "info", "action": "top_dress_nitrogen", "recheck_hours": 168,
+      "headline": "Nitrogen deficiency likely",
+      "farmer_message": "Older leaves yellowing from the bottom up suggests nitrogen shortage. Apply a split top-dress with enough soil moisture, and use a leaf colour chart before the next dose.",
+      "steps": [
+        "Confirm that the yellowing starts on the OLDEST leaves - new-leaf yellowing means a different nutrient.",
+        "Apply the nitrogen top-dress as a split dose with adequate soil moisture.",
+        "Use a leaf colour chart (LCC) to time the next split in rice."
+      ],
+      "ipm": [],
+      "chemical_guidance": "Follow the soil-test based split schedule. Excess nitrogen invites blast, BLB, planthopper and whitefly - do not overdose.",
+      "irrigation_advice": "Irrigate lightly after top-dressing so the nutrient reaches the root zone.",
+      "escalate_if": "No greening within 10-14 days - check for waterlogging or root damage."
+    },
+    "deficiency__zinc": {
+      "urgency": "info", "action": "foliar_zinc", "recheck_hours": 168,
+      "headline": "Zinc deficiency likely",
+      "farmer_message": "Zinc deficiency (khaira) likely - rusty brown patches on the middle leaves with stunting. A foliar zinc spray gives the quickest response; correct the soil dose next season.",
+      "steps": [
+        "Confirm the rusty-brown interveinal blotching on middle leaves with shortened internodes.",
+        "Apply a foliar zinc sulphate spray, neutralised as recommended for your crop.",
+        "Repeat after 10-15 days if symptoms persist."
+      ],
+      "ipm": [],
+      "chemical_guidance": "Soil application of zinc sulphate at the recommended rate every 2-3 seasons; foliar spray for immediate correction.",
+      "irrigation_advice": "Drain waterlogged patches - continuous flooding worsens zinc deficiency in rice.",
+      "escalate_if": "Symptoms persist after two foliar sprays - test the soil pH."
+    },
+    "abiotic__water_stress": {
+      "urgency": "warning", "action": "irrigate_now", "recheck_hours": 6,
+      "headline": "Water stress - irrigate",
+      "farmer_message": "Crop shows water stress (leaf rolling, dull canopy). Check soil moisture at root depth and irrigate if the sensor is below the set point.",
+      "steps": [
+        "Confirm with the soil moisture sensor at root depth before irrigating.",
+        "If leaves stay rolled after 9-10 am, irrigate the same day.",
+        "Irrigate early morning or evening to cut evaporation loss."
+      ],
+      "ipm": [],
+      "chemical_guidance": "No plant protection product is indicated.",
+      "irrigation_advice": "Irrigate now if soil moisture is below the crop set point; prefer drip or alternate-furrow to save water.",
+      "escalate_if": "Rolling continues 24 hours after irrigation - check for root disease, nematodes or a hardpan."
+    },
+    "abiotic__heat_scald": {
+      "urgency": "warning", "action": "heat_mitigation", "recheck_hours": 12,
+      "headline": "Heat stress warning",
+      "farmer_message": "Heat stress damage visible. Give a light irrigation in the evening, and avoid spraying or fertiliser application during the hot hours.",
+      "steps": [
+        "Give a light irrigation in the late evening or early morning to cool the root zone.",
+        "Do not spray during peak heat - it scorches the leaf and wastes chemical.",
+        "Mulch the root zone where possible."
+      ],
+      "ipm": [],
+      "chemical_guidance": "No plant protection product is indicated; potassium nutrition improves heat tolerance.",
+      "irrigation_advice": "Shorter, more frequent irrigations during the heat spell; irrigate outside 11:00-16:00.",
+      "escalate_if": "Flower or fruit drop begins, or the forecast holds above 38 C for 3 more days."
+    },
+    "abiotic__waterlogging": {
+      "urgency": "critical", "action": "drain_field", "recheck_hours": 6,
+      "headline": "Waterlogging / flood damage",
+      "farmer_message": "Waterlogging damage detected. Drain standing water as fast as possible - roots suffocate within 2-3 days. Do not apply fertiliser to a flooded field.",
+      "steps": [
+        "Open drainage channels and remove standing water immediately.",
+        "Once drained, wash silt off the leaves so the crop can photosynthesise.",
+        "Wait for the soil to drain before any fertiliser - it will only leach away.",
+        "Watch for root rot and stem rot in the following week."
+      ],
+      "ipm": ["Expect a rise in fungal root diseases after flooding - scout in 5-7 days."],
+      "chemical_guidance": "A protective fungicide drench may be advised after prolonged flooding; confirm with your KVK.",
+      "irrigation_advice": "Stop all irrigation; the priority is drainage.",
+      "escalate_if": "Water stands for more than 48 hours, or plants wilt after the water recedes."
+    }
+  },
+  "generic_messages": {
+    "irrigate_now": {"en": "Irrigate now", "hi": "अब सिंचाई करें"},
+    "delay_irrigation": {"en": "Delay irrigation", "hi": "सिंचाई टाल दें"},
+    "disease_detected": {"en": "Possible disease detected", "hi": "संभावित रोग मिला है"},
+    "pest_increasing": {"en": "Pest activity increasing", "hi": "कीट का प्रकोप बढ़ रहा है"},
+    "heat_stress": {"en": "Heat-stress warning", "hi": "गर्मी से नुकसान की चेतावनी"},
+    "flood_risk": {"en": "Flood-risk alert", "hi": "बाढ़ का खतरा"},
+    "healthy": {"en": "Crop looks healthy", "hi": "फसल स्वस्थ दिख रही है"},
+    "uncertain": {"en": "Not sure - take another photo", "hi": "स्पष्ट नहीं - फिर से फोटो लें"},
+    "call_expert": {"en": "Contact your KVK / agriculture officer", "hi": "अपने कृषि अधिकारी से संपर्क करें"}
+  }
+}

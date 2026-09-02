@@ -1,0 +1,1089 @@
+{
+  "schema_version": 1,
+  "description": "CropGuard pest / disease / deficiency class registry for the Smart Farming Assistant edge model. 'aliases' hold upstream dataset folder names (PlantVillage, IP102, Rice Leaf Diseases, ...) so public datasets can be remapped onto this taxonomy without renaming files.",
+  "categories": {
+    "healthy": {
+      "label": "Healthy",
+      "advisory_group": "none"
+    },
+    "disease": {
+      "label": "Disease",
+      "advisory_group": "plant_protection"
+    },
+    "pest": {
+      "label": "Insect pest",
+      "advisory_group": "plant_protection"
+    },
+    "deficiency": {
+      "label": "Nutrient deficiency",
+      "advisory_group": "nutrition"
+    },
+    "abiotic": {
+      "label": "Abiotic stress",
+      "advisory_group": "irrigation"
+    },
+    "background": {
+      "label": "Not a crop canopy",
+      "advisory_group": "none"
+    }
+  },
+  "classes": [
+    {
+      "id": "background",
+      "crop": "any",
+      "name": "Background / non-leaf",
+      "category": "background",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Soil, sky, hand, machinery or an out-of-focus frame with no diagnosable leaf surface.",
+      "aliases": [
+        "background",
+        "background_without_leaves"
+      ]
+    },
+    {
+      "id": "tomato__healthy",
+      "crop": "tomato",
+      "name": "Healthy tomato",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Uniform green lamina, turgid leaflets, no lesions or chlorosis.",
+      "aliases": [
+        "Tomato___healthy"
+      ]
+    },
+    {
+      "id": "potato__healthy",
+      "crop": "potato",
+      "name": "Healthy potato",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Dark green compound leaves, no necrotic spots.",
+      "aliases": [
+        "Potato___healthy"
+      ]
+    },
+    {
+      "id": "rice__healthy",
+      "crop": "rice",
+      "name": "Healthy rice",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Erect green blades, no lesions, no hopper burn.",
+      "aliases": [
+        "Rice___healthy"
+      ]
+    },
+    {
+      "id": "wheat__healthy",
+      "crop": "wheat",
+      "name": "Healthy wheat",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Uniform green flag and lower leaves, no pustules.",
+      "aliases": [
+        "Wheat___healthy"
+      ]
+    },
+    {
+      "id": "maize__healthy",
+      "crop": "maize",
+      "name": "Healthy maize",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Broad green leaves, intact whorl, no windowpane feeding.",
+      "aliases": [
+        "Corn_(maize)___healthy"
+      ]
+    },
+    {
+      "id": "cotton__healthy",
+      "crop": "cotton",
+      "name": "Healthy cotton",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Dark green palmate leaves, no vein thickening or curling.",
+      "aliases": [
+        "Cotton___healthy",
+        "fresh cotton leaf"
+      ]
+    },
+    {
+      "id": "chilli__healthy",
+      "crop": "chilli",
+      "name": "Healthy chilli",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Flat glossy leaves, no upward curling or silvering.",
+      "aliases": [
+        "Chilli___healthy"
+      ]
+    },
+    {
+      "id": "sugarcane__healthy",
+      "crop": "sugarcane",
+      "name": "Healthy sugarcane",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Green blades, no red streaks in split cane, no dead hearts.",
+      "aliases": [
+        "Sugarcane___healthy"
+      ]
+    },
+    {
+      "id": "grape__healthy",
+      "crop": "grape",
+      "name": "Healthy grape",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Uniform green lamina, no oil spots or pustules.",
+      "aliases": [
+        "Grape___healthy"
+      ]
+    },
+    {
+      "id": "tomato__early_blight",
+      "crop": "tomato",
+      "name": "Early blight",
+      "category": "disease",
+      "agent": "Alternaria solani",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Dark brown spots with concentric rings (target pattern) and a yellow halo, starting on the oldest lower leaves.",
+      "aliases": [
+        "Tomato___Early_blight"
+      ]
+    },
+    {
+      "id": "tomato__late_blight",
+      "crop": "tomato",
+      "name": "Late blight",
+      "category": "disease",
+      "agent": "Phytophthora infestans",
+      "agent_type": "oomycete",
+      "spread_risk": "very_high",
+      "symptoms": "Water-soaked grey-green blotches turning brown-black, spreading fast from leaf tip/margin, white downy growth on the underside in humid weather.",
+      "aliases": [
+        "Tomato___Late_blight"
+      ]
+    },
+    {
+      "id": "tomato__septoria_leaf_spot",
+      "crop": "tomato",
+      "name": "Septoria leaf spot",
+      "category": "disease",
+      "agent": "Septoria lycopersici",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Many small circular spots with grey centres and dark margins, black pycnidia visible in the centre.",
+      "aliases": [
+        "Tomato___Septoria_leaf_spot"
+      ]
+    },
+    {
+      "id": "tomato__bacterial_spot",
+      "crop": "tomato",
+      "name": "Bacterial spot",
+      "category": "disease",
+      "agent": "Xanthomonas spp.",
+      "agent_type": "bacterium",
+      "spread_risk": "high",
+      "symptoms": "Small greasy water-soaked spots that become angular, dark and scabby; leaf edges tatter.",
+      "aliases": [
+        "Tomato___Bacterial_spot"
+      ]
+    },
+    {
+      "id": "tomato__leaf_mold",
+      "crop": "tomato",
+      "name": "Leaf mould",
+      "category": "disease",
+      "agent": "Passalora fulva",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Pale yellow patches on the upper surface with olive-green velvety mould directly beneath; typical of polyhouse humidity.",
+      "aliases": [
+        "Tomato___Leaf_Mold"
+      ]
+    },
+    {
+      "id": "tomato__target_spot",
+      "crop": "tomato",
+      "name": "Target spot",
+      "category": "disease",
+      "agent": "Corynespora cassiicola",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Small brown lesions enlarging into ringed spots on leaves, stems and fruit.",
+      "aliases": [
+        "Tomato___Target_Spot"
+      ]
+    },
+    {
+      "id": "tomato__yellow_leaf_curl_virus",
+      "crop": "tomato",
+      "name": "Yellow leaf curl virus",
+      "category": "disease",
+      "agent": "Tomato yellow leaf curl virus (whitefly-vectored)",
+      "agent_type": "virus",
+      "spread_risk": "very_high",
+      "symptoms": "Severe upward cupping, yellow leaf margins, stunted bushy plants, heavy flower drop.",
+      "vector": "pest__whitefly",
+      "aliases": [
+        "Tomato___Tomato_Yellow_Leaf_Curl_Virus"
+      ]
+    },
+    {
+      "id": "tomato__mosaic_virus",
+      "crop": "tomato",
+      "name": "Mosaic virus",
+      "category": "disease",
+      "agent": "Tomato mosaic virus",
+      "agent_type": "virus",
+      "spread_risk": "high",
+      "symptoms": "Light and dark green mottling, fern-leaf narrowing and puckering of young leaves.",
+      "aliases": [
+        "Tomato___Tomato_mosaic_virus"
+      ]
+    },
+    {
+      "id": "potato__early_blight",
+      "crop": "potato",
+      "name": "Early blight",
+      "category": "disease",
+      "agent": "Alternaria solani",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Concentric ringed brown lesions on older leaves, progressive defoliation from the base upward.",
+      "aliases": [
+        "Potato___Early_blight"
+      ]
+    },
+    {
+      "id": "potato__late_blight",
+      "crop": "potato",
+      "name": "Late blight",
+      "category": "disease",
+      "agent": "Phytophthora infestans",
+      "agent_type": "oomycete",
+      "spread_risk": "very_high",
+      "symptoms": "Irregular water-soaked dark lesions with a pale halo, white sporulation on the underside, whole-canopy collapse in cool wet spells.",
+      "aliases": [
+        "Potato___Late_blight"
+      ]
+    },
+    {
+      "id": "rice__blast",
+      "crop": "rice",
+      "name": "Rice blast",
+      "category": "disease",
+      "agent": "Magnaporthe oryzae",
+      "agent_type": "fungus",
+      "spread_risk": "very_high",
+      "symptoms": "Spindle / eye-shaped lesions with grey centres and brown margins; neck blast blackens the panicle base and empties grain.",
+      "aliases": [
+        "Rice___Leaf_blast",
+        "rice_blast",
+        "Leaf blast"
+      ]
+    },
+    {
+      "id": "rice__bacterial_leaf_blight",
+      "crop": "rice",
+      "name": "Bacterial leaf blight",
+      "category": "disease",
+      "agent": "Xanthomonas oryzae pv. oryzae",
+      "agent_type": "bacterium",
+      "spread_risk": "high",
+      "symptoms": "Yellow wavy-margined streaks from the leaf tip drying downward; milky bacterial ooze from a cut leaf held in water.",
+      "aliases": [
+        "Rice___Bacterial_leaf_blight",
+        "Bacterial leaf blight"
+      ]
+    },
+    {
+      "id": "rice__brown_spot",
+      "crop": "rice",
+      "name": "Brown spot",
+      "category": "disease",
+      "agent": "Bipolaris oryzae",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Numerous oval brown spots with grey centres on the blade; strongly associated with nutrient-poor or drought-stressed soils.",
+      "aliases": [
+        "Rice___Brown_spot",
+        "Brown spot"
+      ]
+    },
+    {
+      "id": "rice__sheath_blight",
+      "crop": "rice",
+      "name": "Sheath blight",
+      "category": "disease",
+      "agent": "Rhizoctonia solani",
+      "agent_type": "fungus",
+      "spread_risk": "high",
+      "symptoms": "Oval greenish-grey water-soaked lesions on the sheath near the water line, with irregular purple-brown borders and banded 'snake-skin' patterning.",
+      "aliases": [
+        "Rice___Sheath_blight",
+        "Sheath blight"
+      ]
+    },
+    {
+      "id": "rice__tungro",
+      "crop": "rice",
+      "name": "Tungro",
+      "category": "disease",
+      "agent": "Rice tungro bacilliform + spherical virus (leafhopper-vectored)",
+      "agent_type": "virus",
+      "spread_risk": "very_high",
+      "symptoms": "Orange-yellow discolouration from the leaf tip, stunting, reduced tillering, patchy field distribution.",
+      "vector": "pest__green_leafhopper",
+      "aliases": [
+        "Rice___Tungro",
+        "Tungro"
+      ]
+    },
+    {
+      "id": "wheat__leaf_rust",
+      "crop": "wheat",
+      "name": "Leaf (brown) rust",
+      "category": "disease",
+      "agent": "Puccinia triticina",
+      "agent_type": "fungus",
+      "spread_risk": "high",
+      "symptoms": "Round to oval orange-brown powdery pustules scattered mainly on the upper leaf surface.",
+      "aliases": [
+        "Wheat___Leaf_rust",
+        "Brown rust"
+      ]
+    },
+    {
+      "id": "wheat__stripe_rust",
+      "crop": "wheat",
+      "name": "Stripe (yellow) rust",
+      "category": "disease",
+      "agent": "Puccinia striiformis",
+      "agent_type": "fungus",
+      "spread_risk": "very_high",
+      "symptoms": "Bright yellow pustules in long stripes between the veins; explosive in cool humid north-Indian winters.",
+      "aliases": [
+        "Wheat___Yellow_rust",
+        "wheat_stripe_rust",
+        "Yellow rust"
+      ]
+    },
+    {
+      "id": "wheat__powdery_mildew",
+      "crop": "wheat",
+      "name": "Powdery mildew",
+      "category": "disease",
+      "agent": "Blumeria graminis f. sp. tritici",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "White to grey cottony powdery patches on the upper surface of lower leaves, later with black cleistothecia.",
+      "aliases": [
+        "Wheat___Powdery_mildew"
+      ]
+    },
+    {
+      "id": "wheat__septoria_blotch",
+      "crop": "wheat",
+      "name": "Septoria leaf blotch",
+      "category": "disease",
+      "agent": "Zymoseptoria tritici",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Elongated tan blotches confined between veins, speckled with dark pycnidia.",
+      "aliases": [
+        "Wheat___Septoria"
+      ]
+    },
+    {
+      "id": "maize__common_rust",
+      "crop": "maize",
+      "name": "Common rust",
+      "category": "disease",
+      "agent": "Puccinia sorghi",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Cinnamon-brown powdery pustules scattered on both leaf surfaces, darkening with age.",
+      "aliases": [
+        "Corn_(maize)___Common_rust_"
+      ]
+    },
+    {
+      "id": "maize__northern_leaf_blight",
+      "crop": "maize",
+      "name": "Northern leaf blight",
+      "category": "disease",
+      "agent": "Exserohilum turcicum",
+      "agent_type": "fungus",
+      "spread_risk": "high",
+      "symptoms": "Long grey-green cigar-shaped lesions running parallel to the veins, starting on lower leaves.",
+      "aliases": [
+        "Corn_(maize)___Northern_Leaf_Blight"
+      ]
+    },
+    {
+      "id": "maize__gray_leaf_spot",
+      "crop": "maize",
+      "name": "Grey leaf spot",
+      "category": "disease",
+      "agent": "Cercospora zeae-maydis",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Narrow rectangular tan lesions with straight edges sharply bounded by the leaf veins.",
+      "aliases": [
+        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot"
+      ]
+    },
+    {
+      "id": "cotton__bacterial_blight",
+      "crop": "cotton",
+      "name": "Bacterial blight (angular leaf spot)",
+      "category": "disease",
+      "agent": "Xanthomonas citri pv. malvacearum",
+      "agent_type": "bacterium",
+      "spread_risk": "high",
+      "symptoms": "Angular water-soaked spots bounded by the veins, turning brown-black; black arm on stems and boll rot.",
+      "aliases": [
+        "Cotton___Bacterial_blight"
+      ]
+    },
+    {
+      "id": "cotton__leaf_curl_virus",
+      "crop": "cotton",
+      "name": "Cotton leaf curl virus",
+      "category": "disease",
+      "agent": "Cotton leaf curl virus (whitefly-vectored)",
+      "agent_type": "virus",
+      "spread_risk": "very_high",
+      "symptoms": "Upward or downward leaf curling, thickened darkened veins, cup-shaped enations on the underside, stunting.",
+      "vector": "pest__whitefly",
+      "aliases": [
+        "Cotton___Leaf_curl",
+        "curl cotton leaf"
+      ]
+    },
+    {
+      "id": "cotton__alternaria_leaf_spot",
+      "crop": "cotton",
+      "name": "Alternaria leaf spot",
+      "category": "disease",
+      "agent": "Alternaria macrospora",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Small brown circular spots with concentric rings and a purple margin, coalescing and causing defoliation.",
+      "aliases": [
+        "Cotton___Alternaria",
+        "diseased cotton leaf"
+      ]
+    },
+    {
+      "id": "chilli__leaf_curl",
+      "crop": "chilli",
+      "name": "Chilli leaf curl complex",
+      "category": "disease",
+      "agent": "Chilli leaf curl virus (whitefly / thrips complex)",
+      "agent_type": "virus",
+      "spread_risk": "very_high",
+      "symptoms": "Severe upward curling and crinkling, shortened internodes, small leathery leaves, 'murda' appearance.",
+      "vector": "pest__whitefly",
+      "aliases": [
+        "Chilli___Leaf_curl",
+        "Pepper___leaf_curl"
+      ]
+    },
+    {
+      "id": "chilli__anthracnose",
+      "crop": "chilli",
+      "name": "Anthracnose / die-back",
+      "category": "disease",
+      "agent": "Colletotrichum spp.",
+      "agent_type": "fungus",
+      "spread_risk": "high",
+      "symptoms": "Sunken circular fruit lesions with concentric acervuli rings; twig die-back from the tip downward.",
+      "aliases": [
+        "Chilli___Anthracnose"
+      ]
+    },
+    {
+      "id": "chilli__powdery_mildew",
+      "crop": "chilli",
+      "name": "Powdery mildew",
+      "category": "disease",
+      "agent": "Leveillula taurica",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Yellow blotches on the upper surface with white powdery growth on the underside, followed by heavy leaf drop.",
+      "aliases": [
+        "Chilli___Powdery_mildew"
+      ]
+    },
+    {
+      "id": "sugarcane__red_rot",
+      "crop": "sugarcane",
+      "name": "Red rot",
+      "category": "disease",
+      "agent": "Colletotrichum falcatum",
+      "agent_type": "fungus",
+      "spread_risk": "very_high",
+      "symptoms": "Drying of the third/fourth leaf from the top; split cane shows red internal tissue crossed by white transverse patches and an alcoholic sour smell.",
+      "aliases": [
+        "Sugarcane___Red_rot",
+        "RedRot"
+      ]
+    },
+    {
+      "id": "sugarcane__rust",
+      "crop": "sugarcane",
+      "name": "Rust",
+      "category": "disease",
+      "agent": "Puccinia melanocephala",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Elongated orange-brown pustules on the lower leaf surface, leaves drying prematurely.",
+      "aliases": [
+        "Sugarcane___Rust",
+        "Rust"
+      ]
+    },
+    {
+      "id": "sugarcane__yellow_leaf",
+      "crop": "sugarcane",
+      "name": "Yellow leaf disease",
+      "category": "disease",
+      "agent": "Sugarcane yellow leaf virus (aphid-vectored)",
+      "agent_type": "virus",
+      "spread_risk": "high",
+      "symptoms": "Intense yellowing of the midrib on the underside spreading into the lamina, tip necrosis, reduced growth.",
+      "vector": "pest__aphid",
+      "aliases": [
+        "Sugarcane___Yellow",
+        "Yellow"
+      ]
+    },
+    {
+      "id": "grape__downy_mildew",
+      "crop": "grape",
+      "name": "Downy mildew",
+      "category": "disease",
+      "agent": "Plasmopara viticola",
+      "agent_type": "oomycete",
+      "spread_risk": "very_high",
+      "symptoms": "Yellow translucent oil spots on the upper surface with white downy sporulation directly beneath after dew or rain.",
+      "aliases": [
+        "Grape___Downy_mildew"
+      ]
+    },
+    {
+      "id": "grape__powdery_mildew",
+      "crop": "grape",
+      "name": "Powdery mildew",
+      "category": "disease",
+      "agent": "Erysiphe necator",
+      "agent_type": "fungus",
+      "spread_risk": "high",
+      "symptoms": "Ash-grey powdery coating on leaves, shoots and berries; berries crack and scar.",
+      "aliases": [
+        "Grape___Powdery_mildew"
+      ]
+    },
+    {
+      "id": "grape__black_rot",
+      "crop": "grape",
+      "name": "Black rot",
+      "category": "disease",
+      "agent": "Guignardia bidwellii",
+      "agent_type": "fungus",
+      "spread_risk": "high",
+      "symptoms": "Circular tan leaf lesions ringed with dark pycnidia; berries shrivel into hard black mummies.",
+      "aliases": [
+        "Grape___Black_rot"
+      ]
+    },
+    {
+      "id": "grape__esca",
+      "crop": "grape",
+      "name": "Esca (black measles)",
+      "category": "disease",
+      "agent": "Phaeomoniella chlamydospora complex",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Interveinal 'tiger-stripe' chlorosis and necrosis, sudden apoplexy of whole arms, dark spotting on berries.",
+      "aliases": [
+        "Grape___Esca_(Black_Measles)"
+      ]
+    },
+    {
+      "id": "grape__leaf_blight",
+      "crop": "grape",
+      "name": "Isariopsis leaf blight",
+      "category": "disease",
+      "agent": "Pseudocercospora vitis",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Irregular dark brown angular blotches with a paler centre, heavy defoliation late in the season.",
+      "aliases": [
+        "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)"
+      ]
+    },
+    {
+      "id": "pest__fall_armyworm",
+      "crop": "maize",
+      "name": "Fall armyworm",
+      "category": "pest",
+      "agent": "Spodoptera frugiperda",
+      "agent_type": "insect",
+      "spread_risk": "very_high",
+      "symptoms": "Ragged whorl feeding with windowpane scarring, wet sawdust-like frass in the whorl, inverted Y on the head capsule and four dorsal spots on the last segment.",
+      "etl": {
+        "unit": "percent_plants_infested",
+        "threshold": 5.0,
+        "stage": "early_whorl",
+        "note": "5-10% whorl damage in early whorl, 10-20% in late whorl (ICAR-NCIPM)"
+      },
+      "aliases": [
+        "fall_armyworm",
+        "Spodoptera_frugiperda",
+        "armyworm"
+      ]
+    },
+    {
+      "id": "pest__american_bollworm",
+      "crop": "cotton",
+      "name": "American bollworm / gram pod borer",
+      "category": "pest",
+      "agent": "Helicoverpa armigera",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Circular bore holes in bolls and pods with the larva's head inserted and body outside; flower and square shedding.",
+      "etl": {
+        "unit": "larvae_per_plant",
+        "threshold": 1.0,
+        "stage": "squaring_to_boll",
+        "note": "1 larva/plant or 8 moths/trap/night for 3 consecutive nights"
+      },
+      "aliases": [
+        "Helicoverpa_armigera",
+        "bollworm",
+        "pod_borer"
+      ]
+    },
+    {
+      "id": "pest__pink_bollworm",
+      "crop": "cotton",
+      "name": "Pink bollworm",
+      "category": "pest",
+      "agent": "Pectinophora gossypiella",
+      "agent_type": "insect",
+      "spread_risk": "very_high",
+      "symptoms": "Rosetted flowers, interlocked lint, pink larvae inside bolls, exit holes plugged with frass.",
+      "etl": {
+        "unit": "moths_per_trap_per_night",
+        "threshold": 8.0,
+        "stage": "boll_formation",
+        "note": "8 moths/pheromone trap/night for 3 nights, or 10% rosette flowers"
+      },
+      "aliases": [
+        "Pectinophora_gossypiella",
+        "pink_bollworm"
+      ]
+    },
+    {
+      "id": "pest__whitefly",
+      "crop": "any",
+      "name": "Whitefly",
+      "category": "pest",
+      "agent": "Bemisia tabaci",
+      "agent_type": "insect",
+      "spread_risk": "very_high",
+      "symptoms": "Clouds of tiny white adults flying up when the canopy is disturbed, nymphs on the underside, sooty mould on honeydew; vector of leaf-curl viruses.",
+      "etl": {
+        "unit": "adults_per_leaf",
+        "threshold": 6.0,
+        "stage": "vegetative_to_flowering",
+        "note": "6 adults/leaf on the top 3 leaves (cotton); much lower where leaf curl virus is present"
+      },
+      "aliases": [
+        "whitefly",
+        "Bemisia_tabaci"
+      ]
+    },
+    {
+      "id": "pest__aphid",
+      "crop": "any",
+      "name": "Aphid",
+      "category": "pest",
+      "agent": "Aphis gossypii / Lipaphis erysimi",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Dense colonies of soft-bodied insects on tender shoots and leaf undersides, curling, sticky honeydew and black sooty mould, ants in attendance.",
+      "etl": {
+        "unit": "aphids_per_leaf",
+        "threshold": 20.0,
+        "stage": "vegetative",
+        "note": "15-20 aphids/leaf, or 10% plants with colonies"
+      },
+      "aliases": [
+        "aphids",
+        "Aphis_gossypii"
+      ]
+    },
+    {
+      "id": "pest__jassid",
+      "crop": "cotton",
+      "name": "Jassid / leafhopper",
+      "category": "pest",
+      "agent": "Amrasca biguttula biguttula",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Wedge-shaped green hoppers that run sideways; leaf margins yellow then turn red-brown and cup downward ('hopper burn').",
+      "etl": {
+        "unit": "nymphs_per_leaf",
+        "threshold": 2.0,
+        "stage": "vegetative",
+        "note": "2 nymphs/leaf on the top 3 leaves"
+      },
+      "aliases": [
+        "jassid",
+        "leafhopper",
+        "Amrasca_biguttula"
+      ]
+    },
+    {
+      "id": "pest__green_leafhopper",
+      "crop": "rice",
+      "name": "Green leafhopper",
+      "category": "pest",
+      "agent": "Nephotettix virescens",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Green hoppers at the canopy top; feeding scars and, more importantly, transmission of rice tungro.",
+      "etl": {
+        "unit": "hoppers_per_hill",
+        "threshold": 2.0,
+        "stage": "tillering",
+        "note": "2 hoppers/hill where tungro is endemic, 10-20 otherwise"
+      },
+      "aliases": [
+        "green_leafhopper",
+        "Nephotettix"
+      ]
+    },
+    {
+      "id": "pest__brown_planthopper",
+      "crop": "rice",
+      "name": "Brown planthopper",
+      "category": "pest",
+      "agent": "Nilaparvata lugens",
+      "agent_type": "insect",
+      "spread_risk": "very_high",
+      "symptoms": "Brown hoppers clustered at the base of tillers just above the water line; circular patches of dried plants ('hopper burn') spreading outward.",
+      "etl": {
+        "unit": "hoppers_per_hill",
+        "threshold": 10.0,
+        "stage": "tillering_to_booting",
+        "note": "10 hoppers/hill before flowering, 20/hill after, when spiders are absent"
+      },
+      "aliases": [
+        "brown_planthopper",
+        "BPH",
+        "Nilaparvata_lugens"
+      ]
+    },
+    {
+      "id": "pest__yellow_stem_borer",
+      "crop": "rice",
+      "name": "Yellow stem borer",
+      "category": "pest",
+      "agent": "Scirpophaga incertulas",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Dead heart in the vegetative stage (central shoot dries and pulls out easily), white ear head at the panicle stage.",
+      "etl": {
+        "unit": "percent_dead_hearts",
+        "threshold": 5.0,
+        "stage": "tillering",
+        "note": "5% dead hearts or 1 egg mass/m2"
+      },
+      "aliases": [
+        "stem_borer",
+        "yellow_stem_borer",
+        "Scirpophaga"
+      ]
+    },
+    {
+      "id": "pest__rice_leaf_folder",
+      "crop": "rice",
+      "name": "Rice leaf folder",
+      "category": "pest",
+      "agent": "Cnaphalocrocis medinalis",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Leaves folded lengthwise and stitched with silk, white longitudinal scraped streaks where the larva has fed inside.",
+      "etl": {
+        "unit": "percent_damaged_leaves",
+        "threshold": 10.0,
+        "stage": "tillering_to_booting",
+        "note": "10% damaged leaves, or 2 freshly damaged leaves/hill"
+      },
+      "aliases": [
+        "leaf_folder",
+        "Cnaphalocrocis"
+      ]
+    },
+    {
+      "id": "pest__thrips",
+      "crop": "any",
+      "name": "Thrips",
+      "category": "pest",
+      "agent": "Thrips tabaci / Scirtothrips dorsalis",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Silvery streaks and black faecal specks, upward leaf curling and crinkling, deformed buds; vector of viral leaf-curl complexes.",
+      "etl": {
+        "unit": "thrips_per_leaf",
+        "threshold": 10.0,
+        "stage": "vegetative_to_flowering",
+        "note": "10 thrips/leaf (chilli), 30/plant (onion)"
+      },
+      "aliases": [
+        "thrips",
+        "Scirtothrips_dorsalis"
+      ]
+    },
+    {
+      "id": "pest__spider_mite",
+      "crop": "any",
+      "name": "Two-spotted spider mite",
+      "category": "pest",
+      "agent": "Tetranychus urticae",
+      "agent_type": "mite",
+      "spread_risk": "high",
+      "symptoms": "Fine white stippling giving a bronzed dusty look, faint webbing on the underside; worst in hot dry weather and after broad-spectrum sprays.",
+      "etl": {
+        "unit": "mites_per_leaf",
+        "threshold": 10.0,
+        "stage": "any",
+        "note": "10 mites/leaf, or webbing visible on 10% of leaves"
+      },
+      "aliases": [
+        "Tomato___Spider_mites Two-spotted_spider_mite",
+        "spider_mite",
+        "red_mite"
+      ]
+    },
+    {
+      "id": "pest__mealybug",
+      "crop": "any",
+      "name": "Mealybug",
+      "category": "pest",
+      "agent": "Phenacoccus solenopsis",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "White waxy cottony masses on stems, leaf axils and undersides; bunchy stunted growth, honeydew and sooty mould, ants tending the colonies.",
+      "etl": {
+        "unit": "percent_plants_infested",
+        "threshold": 10.0,
+        "stage": "any",
+        "note": "10% plants infested, or colonies on 5% of terminals"
+      },
+      "aliases": [
+        "mealybug",
+        "Phenacoccus_solenopsis"
+      ]
+    },
+    {
+      "id": "pest__tomato_leaf_miner",
+      "crop": "tomato",
+      "name": "Tomato leaf miner (Tuta)",
+      "category": "pest",
+      "agent": "Tuta absoluta",
+      "agent_type": "insect",
+      "spread_risk": "very_high",
+      "symptoms": "Irregular blotch mines in the lamina with black frass inside, pin-hole entries into fruit near the calyx.",
+      "etl": {
+        "unit": "moths_per_trap_per_week",
+        "threshold": 30.0,
+        "stage": "any",
+        "note": "30 moths/pheromone trap/week, or 5% mined leaflets"
+      },
+      "aliases": [
+        "Tuta_absoluta",
+        "leaf_miner",
+        "leafminer"
+      ]
+    },
+    {
+      "id": "pest__sugarcane_early_shoot_borer",
+      "crop": "sugarcane",
+      "name": "Early shoot borer",
+      "category": "pest",
+      "agent": "Chilo infuscatellus",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Dead hearts in shoots up to four months old that pull out easily and smell offensive; bore holes near ground level.",
+      "etl": {
+        "unit": "percent_dead_hearts",
+        "threshold": 10.0,
+        "stage": "germination_to_tillering",
+        "note": "10% dead hearts"
+      },
+      "aliases": [
+        "early_shoot_borer",
+        "Chilo_infuscatellus"
+      ]
+    },
+    {
+      "id": "deficiency__nitrogen",
+      "crop": "any",
+      "name": "Nitrogen deficiency",
+      "category": "deficiency",
+      "agent": "N shortage (mobile nutrient)",
+      "agent_type": "abiotic",
+      "spread_risk": "none",
+      "symptoms": "Uniform pale green to yellow starting on the OLDEST lower leaves and moving up; whole plant stunted and spindly.",
+      "aliases": [
+        "nitrogen_deficiency",
+        "N_deficiency"
+      ]
+    },
+    {
+      "id": "deficiency__phosphorus",
+      "crop": "any",
+      "name": "Phosphorus deficiency",
+      "category": "deficiency",
+      "agent": "P shortage (mobile nutrient)",
+      "agent_type": "abiotic",
+      "spread_risk": "none",
+      "symptoms": "Dull blue-green older leaves with purple or reddish tints on the underside and along veins; delayed flowering, thin stems.",
+      "aliases": [
+        "phosphorus_deficiency",
+        "P_deficiency"
+      ]
+    },
+    {
+      "id": "deficiency__potassium",
+      "crop": "any",
+      "name": "Potassium deficiency",
+      "category": "deficiency",
+      "agent": "K shortage (mobile nutrient)",
+      "agent_type": "abiotic",
+      "spread_risk": "none",
+      "symptoms": "Scorching and browning of the MARGINS of older leaves with the mid-lamina staying green; weak lodging-prone stems.",
+      "aliases": [
+        "potassium_deficiency",
+        "K_deficiency"
+      ]
+    },
+    {
+      "id": "deficiency__zinc",
+      "crop": "any",
+      "name": "Zinc deficiency",
+      "category": "deficiency",
+      "agent": "Zn shortage (immobile nutrient)",
+      "agent_type": "abiotic",
+      "spread_risk": "none",
+      "symptoms": "Interveinal chlorosis with rusty brown blotches on middle leaves, shortened internodes and small leaves; 'khaira' in rice on calcareous / high-pH soils.",
+      "aliases": [
+        "zinc_deficiency",
+        "Zn_deficiency",
+        "khaira"
+      ]
+    },
+    {
+      "id": "deficiency__iron",
+      "crop": "any",
+      "name": "Iron deficiency",
+      "category": "deficiency",
+      "agent": "Fe shortage (immobile nutrient)",
+      "agent_type": "abiotic",
+      "spread_risk": "none",
+      "symptoms": "Sharp interveinal chlorosis on the YOUNGEST leaves with veins staying distinctly green; severe cases bleach white.",
+      "aliases": [
+        "iron_deficiency",
+        "Fe_deficiency",
+        "iron_chlorosis"
+      ]
+    },
+    {
+      "id": "deficiency__magnesium",
+      "crop": "any",
+      "name": "Magnesium deficiency",
+      "category": "deficiency",
+      "agent": "Mg shortage (mobile nutrient)",
+      "agent_type": "abiotic",
+      "spread_risk": "none",
+      "symptoms": "Interveinal yellowing on OLDER leaves in an inverted-V pattern from the margin inward, veins remaining green.",
+      "aliases": [
+        "magnesium_deficiency",
+        "Mg_deficiency"
+      ]
+    },
+    {
+      "id": "abiotic__water_stress",
+      "crop": "any",
+      "name": "Water stress (drought)",
+      "category": "abiotic",
+      "agent": "Soil moisture deficit",
+      "agent_type": "abiotic",
+      "spread_risk": "none",
+      "symptoms": "Leaf rolling or inward folding, dull grey-green canopy, wilting that persists into the morning, marginal drying without lesions.",
+      "aliases": [
+        "water_stress",
+        "drought_stress",
+        "wilting"
+      ]
+    },
+    {
+      "id": "abiotic__heat_scald",
+      "crop": "any",
+      "name": "Heat stress / sunscald",
+      "category": "abiotic",
+      "agent": "High temperature and radiation load",
+      "agent_type": "abiotic",
+      "spread_risk": "none",
+      "symptoms": "Bleached papery patches on sun-exposed tissue, necrotic leaf tips and margins, flower and fruit drop after a heat spell.",
+      "aliases": [
+        "heat_stress",
+        "sunscald",
+        "sunburn"
+      ]
+    },
+    {
+      "id": "abiotic__waterlogging",
+      "crop": "any",
+      "name": "Waterlogging / flood damage",
+      "category": "abiotic",
+      "agent": "Root-zone oxygen deficit",
+      "agent_type": "abiotic",
+      "spread_risk": "none",
+      "symptoms": "Uniform yellowing from the bottom up after standing water, epinastic drooping petioles, silt-coated leaves, root blackening and rot.",
+      "aliases": [
+        "waterlogging",
+        "flood_damage"
+      ]
+    }
+  ]
+}

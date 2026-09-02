@@ -1,0 +1,260 @@
+# CropGuard — pest & disease model for the Smart Farming Assistant
+
+The on-device vision model for the Smart Farming Assistant: it looks at a leaf
+photo and answers **what is wrong, how sure it is, and what the farmer should
+do about it** — running entirely on a field device with no internet.
+
+This repository is the *pest and disease* component. It is designed to plug
+into the wider system (irrigation, environmental monitoring, dashboard) through
+the JSON contracts described in [Integration](#integration).
+
+---
+
+## Why this is not just an image classifier
+
+A 99%-accuracy leaf classifier can still be useless — or harmful — in a field.
+The engineering here is mostly about the ways that happens:
+
+| Failure in the field | What this repo does about it |
+|---|---|
+| A model that never says "I don't know" gives a photo of the sky a disease name and a spray recommendation. | A **Mahalanobis novelty detector** over the model's own embeddings rejects unfamiliar images. Confidence thresholds alone do not do this — measured on this model, flat grey scored **0.996** for "healthy". |
+| Softmax scores are not probabilities, so any confidence threshold is arbitrary. | **Temperature scaling** on validation, then the abstention threshold is *chosen* against an error budget (≤10% wrong among answered images) rather than hardcoded. |
+| Accuracy hides outbreaks: a 70%-healthy archive gives 70% accuracy to a model that always says "healthy". | Selection and reporting are on **macro F1** and per-class recall. |
+| PlantVillage's near-duplicate leaves leak across a random split and inflate validation by tens of points. | Splitting is **grouped and stratified**; leakage is asserted, not hoped for. |
+| Lab-lit training photos collapse on a phone photo taken at noon. | Augmentation simulates **shadow, sun glare, motion blur, canopy occlusion and phone JPEG**. |
+| The device resizes differently from training, and nobody notices. | Preprocessing is pinned in a **model card** and the two implementations are asserted equal to 1e-4 in CI. |
+| Blanket spraying on a single detection. | Advisories are tied to **economic threshold levels (ETL)**; a below-ETL finding can never escalate to `critical`. |
+| Confusing a pest with a nutrient deficiency sends the farmer to buy the wrong input. | Evaluation reports the **cross-category error rate** separately and ranks cross-category confusions first. |
+
+---
+
+## Quick start (no dataset needed)
+
+```bash
+pip install -r requirements.txt
+
+# 1. synthesise a dataset and build a leakage-free manifest
+python scripts/prepare_dataset.py --synthetic --per-class 120 --image-size 128 \
+    --classes background,tomato__healthy,tomato__early_blight,tomato__late_blight,rice__blast,wheat__stripe_rust,pest__aphid,pest__fall_armyworm,deficiency__iron,abiotic__water_stress,pest__spider_mite,maize__common_rust \
+    --out artifacts/data/manifest.csv
+
+# 2. train (CPU-friendly; drop --no-pretrained when ImageNet weights are reachable)
+python -m cropguard.train --manifest artifacts/data/manifest.csv \
+    --run-name demo --epochs 30 --image-size 96 --no-pretrained --lr 3e-3
+
+# 3. evaluate, with calibration and per-class metrics
+python -m cropguard.evaluate --run artifacts/runs/demo --split test
+
+# 4. export a deployable bundle (ONNX + INT8 + model card + OOD detector)
+python -m cropguard.export --run artifacts/runs/demo --formats onnx,int8
+
+# 5. see the whole field decision path, photo to SMS
+python scripts/demo_edge_pipeline.py --bundle artifacts/runs/demo/export
+
+# 6. measure it on the target board
+python -m cropguard.benchmark --bundle artifacts/runs/demo/export --compare
+```
+
+> The synthetic generator draws each class with a signature derived from its own
+> symptom text in the taxonomy — ringed lesions for *concentric rings*, pustules
+> for *pustules*, insects for a pest, a non-leaf frame for `background`. It makes
+> the pipeline runnable and testable today. **It is not a substitute for field
+> data** and says nothing about real-world accuracy.
+
+## Training on real data
+
+Point `--source` at any ImageFolder-style dataset; folder names are matched
+against the taxonomy's alias table, so upstream naming works unchanged.
+
+```bash
+python scripts/prepare_dataset.py \
+    --source data/PlantVillage \
+    --source data/rice_leaf_diseases \
+    --source data/kvk_scouting_photos \
+    --out artifacts/data/manifest.csv --min-per-class 25
+
+python -m cropguard.train --config configs/default.yaml
+```
+
+Unmapped folders are **listed, not silently dropped** — an unmapped folder is
+usually a class worth adding to `src/cropguard/resources/taxonomy.json`.
+
+To build a district-specific model (smaller, faster, more accurate), restrict
+the taxonomy: `--crops cotton` or `--classes a,b,c`.
+
+---
+
+## What the model is
+
+A single **MobileNetV3-Small** trunk (~1.1 M parameters) with three heads:
+
+| Head | Output | Why |
+|---|---|---|
+| `label` | 70-way diagnosis | the actual answer |
+| `category` | healthy / disease / pest / deficiency / abiotic / background | an easier problem, so when the fine head is unsure the device can still say *"this is a pest problem"* instead of nothing |
+| `severity` | none / low / moderate / severe | drives spot-treat vs treat-the-field; **masked** wherever the dataset has no severity label |
+
+Plus a 128-d embedding, exported alongside the probabilities, which is what the
+novelty detector scores.
+
+Backbones available: `mobilenet_v3_small` (default), `mobilenet_v3_large`,
+`efficientnet_b0`, `shufflenet_v2_x1_0`, `resnet18`, `squeezenet1_1`.
+
+### Measured on the bundled synthetic benchmark
+
+12 classes, 1 008 training images, 96 px, trained from scratch (ImageNet weights
+were not reachable in this environment), evaluated on a held-out test split:
+
+| | |
+|---|---|
+| test macro F1 | **0.96** |
+| ECE after temperature scaling | 0.027 (from 0.097) |
+| ONNX FP32 / INT8 size | 4.5 MB / **1.4 MB** |
+| latency, INT8, 4-core x86 CPU | **~3 ms/image** including preprocessing |
+| noise / flat-grey / binary-texture inputs | **rejected** as out-of-distribution |
+
+These numbers demonstrate that the pipeline works end to end. **They are not a
+claim about field accuracy** — synthetic lesions are far easier than real ones,
+and transfer learning from ImageNet (unavailable here) is worth double digits on
+real data.
+
+---
+
+## Deployment bundle
+
+`cropguard.export` writes a self-contained directory:
+
+```
+export/
+├── cropguard.onnx        # FP32, weights embedded (never a sidecar .data file)
+├── cropguard.int8.onnx   # INT8, statically calibrated on real training images
+├── cropguard.ptl         # TorchScript, for an in-app Android/iOS model
+├── model_card.json       # label order, preprocessing, temperature, threshold
+├── taxonomy.json         # agronomic metadata for the classes in this model
+├── advisory.json         # the farmer-facing recommendations
+└── ood.npz               # novelty detector (class means + shared precision)
+```
+
+Every artefact is **verified at export time**, not assumed: ONNX outputs are
+compared against torch, and INT8 against FP32 on real images where FP32 has
+actually committed to a prediction. `export` exits non-zero if any check fails.
+
+On the device, only `numpy`, `Pillow` and `onnxruntime` are needed — no torch:
+
+```python
+from cropguard.edge import EdgeClassifier
+
+clf = EdgeClassifier("export/")            # picks the INT8 model automatically
+d = clf.diagnose("leaf.jpg")
+
+if d.accepted:
+    print(d.display_name, d.confidence, d.severity)
+    print(d.advisory.to_sms())             # <= 160 chars, ready for a feature phone
+else:
+    print(d.reason)                        # why it refused to answer
+```
+
+For a wide canopy or drone frame, `clf.diagnose_canopy(img)` tiles the image
+(a whitefly is a few pixels at full-frame resolution) and returns the dominant
+problem plus the **share of affected tiles**, which is what turns a single photo
+into a spot-treat-vs-treat-the-field decision.
+
+---
+
+## Early warning
+
+One photo is not an outbreak. `cropguard.early_warning` holds the time
+dimension and combines two independent signals:
+
+```python
+from cropguard.early_warning import PestPressureTracker, WeatherReading, infection_risk, combined_risk
+
+tracker = PestPressureTracker()
+tracker.add_diagnosis(d, field_id="plot-7")     # accepted detections only
+
+camera  = tracker.evaluate(field_id="plot-7")   # trend + ETL crossing
+weather = infection_risk(readings)              # infection windows, before symptoms
+alerts  = combined_risk(camera, weather)        # agreement escalates
+```
+
+* **Pest pressure** — EWMA-smoothed detection trend compared against the
+  economic threshold published for that pest. Above ETL escalates; below ETL is
+  capped at `warning`, because calling a below-threshold finding an emergency is
+  how farmers learn to ignore alerts.
+* **Infection risk** — temperature / humidity / leaf-wetness windows for late
+  blight, downy mildew, blast, the rusts and others. These fire *before*
+  symptoms are visible, which is the only time a protectant spray is worth its
+  cost.
+* **Both agreeing** is the strongest signal the system produces and is delivered
+  as one alert, not two half-warnings.
+
+---
+
+## Integration
+
+Contracts for the rest of the Smart Farming Assistant:
+
+| Consumer | Interface |
+|---|---|
+| Mobile app / field display | `Diagnosis.to_dict()` — class, confidence, severity, top-k, novelty, full advisory |
+| SMS gateway | `Advisory.to_sms()` / `Alert.to_sms()` — ≤160 chars, never cuts a word |
+| Irrigation module | `Advisory.irrigation_advice`, plus the `abiotic__water_stress` / `abiotic__waterlogging` classes |
+| Environmental monitoring | feeds `WeatherReading` into `infection_risk()` |
+| Analytics dashboard | `Alert.to_dict()` per field/zone, and the run's `eval/*_report.json` |
+| Localisation | `AdvisoryEngine.message(key, lang)` — English and Hindi for the core alert strings |
+
+Everything crossing a module boundary is plain JSON-serialisable data, and the
+edge-facing modules (`taxonomy`, `advisory`, `early_warning`, `edge`, `ood`)
+import nothing heavier than numpy.
+
+---
+
+## Repository layout
+
+```
+src/cropguard/
+├── taxonomy.py          70-class registry + agronomic metadata      (stdlib)
+├── advisory.py          class -> farmer recommendation              (stdlib)
+├── early_warning.py     pest trend + weather infection risk         (stdlib)
+├── ood.py               Mahalanobis novelty detector                (numpy)
+├── model_card.py        the model/consumer contract                 (stdlib)
+├── metrics.py           macro F1, calibration, selective risk       (numpy)
+├── config.py            YAML/CLI configuration
+├── train.py             training loop, calibration, OOD fitting
+├── evaluate.py          per-class metrics, confusions, thresholds
+├── export.py            ONNX / INT8 / TorchScript, all verified
+├── benchmark.py         latency, size, throughput on the target
+├── data/                manifest, field augmentation, synthetic generator
+├── models/              backbones, multi-head detector, losses
+├── edge/                numpy preprocessing + onnxruntime runtime
+└── resources/           taxonomy.json, advisory.json
+```
+
+## Tests
+
+```bash
+pytest -q                    # unit tests, seconds
+pytest -q -m slow            # full train -> export -> device -> advice, ~2 min
+```
+
+The end-to-end test asserts the *contracts* rather than accuracy: exported
+label order matches training, device preprocessing matches torchvision, ONNX
+matches torch, unfamiliar images are refused, and an accepted diagnosis carries
+advice a farmer could act on.
+
+---
+
+## Known limitations
+
+* Trained on leaf-level close-ups; whole-field imagery must be tiled.
+* Symptoms genuinely overlap between causes (early viral infection vs nutrient
+  deficiency). The category head and the abstention threshold exist to keep the
+  system honest about this, but a high-cost action should be confirmed by an
+  extension officer.
+* Severity is a coarse 4-level estimate from one frame; it does not replace a
+  scouting count against the ETL.
+* Infection-risk rules are simplified decision support, not validated local
+  disease models. Calibrate them against district data before relying on them.
+* Advisories name IPM practices and action classes, **not** pesticide doses.
+  Product, dose and pre-harvest interval must follow the label and the State
+  Agriculture Department / KVK recommendation.

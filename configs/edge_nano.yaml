@@ -1,0 +1,48 @@
+# Smallest useful configuration: 160px input, aggressive quantisation target.
+#
+# Use this for a single-board device with no accelerator, or for a CI /
+# offline run where ImageNet weights cannot be downloaded. The pretrained:
+# false path automatically disables the frozen warm-start and trains the trunk
+# at full LR - freezing a randomly initialised trunk learns nothing.
+
+run_name: cropguard-nano
+output_dir: artifacts/runs
+seed: 1337
+
+data:
+  manifest: artifacts/data/manifest.csv
+  image_size: 160
+  batch_size: 64
+  num_workers: 2
+  balanced_sampling: true
+  aug_strength: 0.6
+
+model:
+  backbone: mobilenet_v3_small
+  pretrained: false
+  dropout: 0.1
+  embedding_dim: 96
+
+optim:
+  epochs: 60           # from scratch needs materially more epochs than fine-tuning
+  lr: 0.003
+  backbone_lr_scale: 1.0
+  weight_decay: 0.0001
+  warmup_epochs: 3
+  grad_clip: 1.0
+  label_smoothing: 0.05
+  category_weight: 0.3
+  severity_weight: 0.2
+  ema_decay: 0.999
+  use_ema: true
+  freeze_epochs: 0
+  early_stopping_patience: 20
+  amp: false           # CPU
+
+policy:
+  max_selective_error: 0.10
+  min_coverage: 0.50
+  min_threshold: 0.30
+  calibrate: true
+  fit_ood: true
+  ood_percentile: 97.5

@@ -1,0 +1,11 @@
+# Field device only. Deliberately excludes torch: a Raspberry Pi does not need
+# a 2 GB deep-learning framework to run a 1.4 MB quantised model.
+#
+#   pip install -r requirements-edge.txt
+#
+# Then cropguard.edge, cropguard.taxonomy, cropguard.advisory,
+# cropguard.early_warning, cropguard.ood and cropguard.model_card all import
+# and run. Everything else in the package is training-side and is not needed.
+numpy>=1.24
+Pillow>=10.0
+onnxruntime>=1.17
