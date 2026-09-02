@@ -254,15 +254,28 @@ class AdvisoryEngine:
 
     # -- internals -------------------------------------------------------
     def _compose_message(self, crop_class, base: dict) -> str:
-        """Fallback farmer message built from the taxonomy entry itself."""
-        head = base.get("headline", crop_class.display_name)
+        """Fallback farmer message built from the taxonomy entry itself.
+
+        Used for classes with no hand-written advisory. It leans on
+        ``display_name`` rather than the raw ``crop`` field, because many pests
+        are recorded against crop ``"any"`` and "detected on any" is not a
+        sentence anybody should receive by SMS.
+        """
         symptom = crop_class.symptoms.split(";")[0].strip().rstrip(".")
         if crop_class.category == "healthy":
-            return f"{crop_class.crop.title()} looks healthy. Continue normal monitoring."
+            crop = "The crop" if crop_class.crop == "any" else crop_class.crop.title()
+            return f"{crop} looks healthy. Continue normal monitoring."
         if crop_class.category == "background":
             return "No crop leaf detected in the photo. Fill the frame with one leaf and retake."
-        agent = f" ({crop_class.agent})" if crop_class.agent else ""
-        return f"{head} on {crop_class.crop}{agent}. Look for: {symptom}."
+
+        # The causal agent helps for a disease or pest ("Alternaria solani");
+        # for a deficiency it just restates the class name.
+        agent = (
+            f" ({crop_class.agent})"
+            if crop_class.agent and crop_class.category in ("disease", "pest")
+            else ""
+        )
+        return f"{crop_class.display_name} detected{agent}. Signs to confirm: {symptom}."
 
     def _unknown_advisory(
         self, confidence: float | None, top: list[tuple[str, float]] | None = None

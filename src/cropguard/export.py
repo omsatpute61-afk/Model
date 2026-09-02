@@ -35,7 +35,7 @@ import numpy as np
 import torch
 
 from .model_card import CARD_FILENAME, ModelCard
-from .ood import OOD_FILENAME
+from .ood import OOD_FILENAME, MahalanobisOOD
 from .models.detector import CropGuardNet, ExportWrapper
 
 LOGGER = logging.getLogger("cropguard.export")
@@ -504,7 +504,7 @@ def refit_ood_for_artifact(
     train_records,
     val_records,
     percentile: float = 97.5,
-) -> tuple["MahalanobisOOD | None", str]:
+) -> tuple[MahalanobisOOD | None, str]:
     """Refit the novelty detector on the embeddings THIS artefact produces.
 
     A detector fitted on torch embeddings does not transfer to a quantised
@@ -518,8 +518,6 @@ def refit_ood_for_artifact(
     So the detector is refitted per artefact, on the exact numerics that will
     run in the field, and then checked for whether it still separates anything.
     """
-    from .ood import MahalanobisOOD
-
     if not train_records:
         return None, "no training records available to refit the detector"
 

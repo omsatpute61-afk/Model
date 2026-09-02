@@ -38,9 +38,11 @@ python scripts/prepare_dataset.py --synthetic --per-class 120 --image-size 128 \
     --classes background,tomato__healthy,tomato__early_blight,tomato__late_blight,rice__blast,wheat__stripe_rust,pest__aphid,pest__fall_armyworm,deficiency__iron,abiotic__water_stress,pest__spider_mite,maize__common_rust \
     --out artifacts/data/manifest.csv
 
-# 2. train (CPU-friendly; drop --no-pretrained when ImageNet weights are reachable)
+# 2. train (CPU-friendly; drop --no-pretrained when ImageNet weights are reachable).
+#    This is the exact command behind the numbers reported below.
 python -m cropguard.train --manifest artifacts/data/manifest.csv \
-    --run-name demo --epochs 30 --image-size 96 --no-pretrained --lr 3e-3
+    --run-name demo --epochs 40 --image-size 96 --no-pretrained --lr 3e-3 \
+    --set data.aug_strength=0.3 --set optim.early_stopping_patience=40
 
 # 3. evaluate, with calibration and per-class metrics
 python -m cropguard.evaluate --run artifacts/runs/demo --split test
@@ -262,8 +264,9 @@ src/cropguard/
 ## Tests
 
 ```bash
-pytest -q                    # unit tests, seconds
-pytest -q -m slow            # full train -> export -> device -> advice, ~2 min
+pytest -q -m "not slow"      # 109 unit tests, ~8 s
+pytest -q                    # all 124, including the full
+                             # train -> export -> device -> advice run (~3 min)
 ```
 
 The end-to-end test asserts the *contracts* rather than accuracy: exported
