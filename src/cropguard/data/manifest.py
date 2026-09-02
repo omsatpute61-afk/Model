@@ -25,11 +25,11 @@ import hashlib
 import random
 import re
 from collections import Counter, defaultdict
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Sequence
 
-from ..taxonomy import SEVERITY_LEVELS, Taxonomy, load_taxonomy
+from ..taxonomy import Taxonomy, load_taxonomy
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
 

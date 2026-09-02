@@ -14,7 +14,6 @@ every hand-off, which is where this kind of system actually breaks:
 * a diagnosis carries advice a farmer could act on.
 """
 
-import json
 from pathlib import Path
 
 import numpy as np
@@ -106,8 +105,6 @@ def test_int8_is_smaller_than_fp32(bundle):
 
 
 def test_onnx_matches_torch_on_the_same_input(trained_run, bundle):
-    import torch
-
     from cropguard.edge.runtime import EdgeClassifier
 
     run_dir, _ = trained_run

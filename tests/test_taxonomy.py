@@ -2,7 +2,7 @@
 
 import pytest
 
-from cropguard.taxonomy import CATEGORIES, Taxonomy, load_taxonomy, normalise_alias
+from cropguard.taxonomy import CATEGORIES, Taxonomy, normalise_alias
 
 
 def test_ids_and_aliases_are_unique(taxonomy):

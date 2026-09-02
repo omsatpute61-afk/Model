@@ -34,7 +34,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from .config import TrainConfig
@@ -233,6 +232,12 @@ def train(cfg: TrainConfig, device: torch.device | None = None) -> dict:
         LOGGER.warning(
             "classes with too few split groups: %s", summary["degenerate_grouping"][:10]
         )
+    if "val" not in loaders:
+        LOGGER.warning(
+            "no validation split in the manifest - model selection, calibration and "
+            "the abstention threshold will all fall back to training data, which "
+            "makes every reported number optimistic. Re-split with a val fraction."
+        )
     save_taxonomy(taxonomy, out_dir / "taxonomy.json")
 
     # -- model -----------------------------------------------------------
@@ -294,13 +299,24 @@ def train(cfg: TrainConfig, device: torch.device | None = None) -> dict:
     total_steps = steps_per_epoch * cfg.optim.epochs
     warmup_steps = steps_per_epoch * cfg.optim.warmup_epochs
 
-    # Scale the EMA ramp to the run: a fixed constant leaves short runs stuck
-    # on the ramp, where the EMA copy is indistinguishable from the live model.
-    ema = (
-        ModelEMA(model, cfg.optim.ema_decay, tau=max(50.0, total_steps / 10.0))
-        if cfg.optim.use_ema
-        else None
-    )
+    # Scale the EMA to the run, in both directions:
+    #
+    #  * the ramp (tau) - a fixed constant leaves short runs stuck on the ramp,
+    #    where the EMA copy is indistinguishable from the live model;
+    #  * the decay - 0.999 means averaging over ~1000 steps, which on a short
+    #    district run is the entire training including the untrained start. The
+    #    EMA then trails a still-improving model and costs accuracy instead of
+    #    buying stability. Cap the averaging window at a fifth of the run.
+    ema = None
+    if cfg.optim.use_ema:
+        max_decay = 1.0 - 1.0 / max(2.0, total_steps / 5.0)
+        decay = min(cfg.optim.ema_decay, max_decay)
+        if decay < cfg.optim.ema_decay:
+            LOGGER.info(
+                "EMA decay reduced %.4f -> %.4f (averaging window %d steps for a "
+                "%d-step run)", cfg.optim.ema_decay, decay, int(1 / (1 - decay)), total_steps,
+            )
+        ema = ModelEMA(model, decay, tau=max(20.0, total_steps / 20.0))
 
     history: list[dict] = []
     best = {"macro_f1": -1.0, "epoch": -1}
@@ -364,7 +380,9 @@ def train(cfg: TrainConfig, device: torch.device | None = None) -> dict:
 
         train_loss = {k: v / max(1, seen) for k, v in running.items()}
         eval_model = ema.module if ema is not None else model
-        val_metrics, _ = evaluate_split(eval_model, loaders.get("val", loaders["train"]), device, taxonomy)
+        val_metrics, _ = evaluate_split(
+            eval_model, loaders.get("val", loaders["train"]), device, taxonomy
+        )
 
         row = {
             "epoch": epoch,

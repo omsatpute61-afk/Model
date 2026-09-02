@@ -28,7 +28,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ..taxonomy import CATEGORIES, SEVERITY_LEVELS
-from .backbones import BackboneInfo, build_backbone
+from .backbones import build_backbone
 
 IGNORE_INDEX = -100
 

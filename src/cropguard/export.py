@@ -272,45 +272,74 @@ def _verify_quantised(
 def export_torchscript(
     model: CropGuardNet, card: ModelCard, out_path: Path, mobile: bool = True
 ) -> ExportResult:
-    """TorchScript bundle for the PyTorch Mobile interpreter (Android/iOS)."""
+    """TorchScript bundle for the PyTorch Mobile interpreter (Android/iOS).
+
+    Each optimisation stage is tried, then **verified by reloading the saved
+    file and comparing outputs**, falling back to the next-simplest form if it
+    does not survive the round trip. This is not defensive padding: on this
+    torch build, ``optimize_for_inference`` produces a graph that saves
+    happily and then fails to load with "required keyword attribute 'value' is
+    undefined". Shipping that means the mobile app gets a model file it cannot
+    open, and the export step would have called it a success.
+    """
     wrapper = ExportWrapper(model, temperature=card.policy.temperature).eval()
     example = _example_input(card)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with torch.no_grad():
-        scripted = torch.jit.trace(wrapper, example, strict=False)
-        scripted = torch.jit.optimize_for_inference(torch.jit.freeze(scripted))
+        traced = torch.jit.trace(wrapper, example, strict=False)
+        expected = wrapper(example)[0]
 
-    detail = "torchscript"
-    saved = out_path
-    if mobile:
+    def _save_and_check(save_fn, label: str) -> tuple[bool, str]:
         try:
+            save_fn()
+        except Exception as exc:  # noqa: BLE001
+            return False, f"{label}: save failed ({_short(exc)})"
+        try:
+            reloaded = torch.jit.load(str(out_path))
+            with torch.no_grad():
+                got = reloaded(example)[0]
+            diff = float((expected - got).abs().max())
+        except Exception as exc:  # noqa: BLE001
+            return False, f"{label}: saved but could not be reloaded ({_short(exc)})"
+        if diff >= 1e-4:
+            return False, f"{label}: reloaded output differs by {diff:.2e}"
+        return True, f"{label}; verified by reload, max|Dprob|={diff:.2e}"
+
+    attempts = []
+    if mobile:
+        def _mobile_save():
             from torch.utils.mobile_optimizer import optimize_for_mobile
 
-            # optimize_for_mobile needs an unfrozen module
-            plain = torch.jit.trace(wrapper, example, strict=False)
-            optimize_for_mobile(plain)._save_for_lite_interpreter(str(out_path))
-            detail = "lite interpreter (mobile)"
-        except Exception as exc:  # noqa: BLE001 - not all builds ship the mobile optimiser
-            LOGGER.warning("mobile optimisation unavailable (%s); saving plain TorchScript", exc)
-            scripted.save(str(out_path))
-            detail = f"plain torchscript ({exc})"
-    else:
-        scripted.save(str(out_path))
+            optimize_for_mobile(traced)._save_for_lite_interpreter(str(out_path))
 
-    verified = True
-    try:
-        loaded = torch.jit.load(str(out_path))
-        with torch.no_grad():
-            a = wrapper(example)[0]
-            b = loaded(example)[0]
-        diff = float((a - b).abs().max())
-        verified = diff < 1e-4
-        detail += f"; max|Δprob|={diff:.2e}"
-    except Exception as exc:  # noqa: BLE001 - lite bundles cannot always be reloaded here
-        detail += f"; reload check skipped ({exc})"
+        attempts.append((_mobile_save, "lite interpreter (mobile)"))
+        attempts.append(
+            (lambda: torch.jit.freeze(traced).save(str(out_path)), "frozen torchscript")
+        )
+    attempts.append((lambda: traced.save(str(out_path)), "plain torchscript"))
 
-    return ExportResult("torchscript", saved, _size_mb(saved), verified, detail)
+    notes = []
+    for save_fn, label in attempts:
+        ok, detail = _save_and_check(save_fn, label)
+        if ok:
+            return ExportResult(
+                "torchscript", out_path, _size_mb(out_path), True,
+                "; ".join([*notes, detail]) if notes else detail,
+            )
+        notes.append(detail)
+        LOGGER.warning("torchscript export: %s - trying a simpler form", detail)
+
+    return ExportResult(
+        "torchscript", out_path,
+        _size_mb(out_path) if out_path.exists() else 0.0,
+        False, "; ".join(notes),
+    )
+
+
+def _short(exc: Exception, limit: int = 120) -> str:
+    text = " ".join(str(exc).split())
+    return text if len(text) <= limit else text[:limit] + "..."
 
 
 def export_run(

@@ -55,6 +55,14 @@ python scripts/demo_edge_pipeline.py --bundle artifacts/runs/demo/export
 python -m cropguard.benchmark --bundle artifacts/runs/demo/export --compare
 ```
 
+> **Training from scratch looks stuck for the first ~10 epochs.** Validation
+> accuracy sits at chance while the training loss falls steadily. This is not a
+> bug: the BatchNorm running statistics used in `eval()` mode lag the batch
+> statistics used in `train()` mode until the features stabilise, and with a
+> randomly initialised trunk that takes a while. It breaks through and then
+> climbs quickly. With ImageNet weights (`pretrained: true`) the effect largely
+> disappears — which is one more reason to use them when the network allows.
+
 > The synthetic generator draws each class with a signature derived from its own
 > symptom text in the taxonomy — ringed lesions for *concentric rings*, pustules
 > for *pustules*, insects for a pest, a non-leaf frame for `background`. It makes

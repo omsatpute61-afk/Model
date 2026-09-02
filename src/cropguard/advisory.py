@@ -25,7 +25,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from .taxonomy import RESOURCE_DIR, SEVERITY_LEVELS, Taxonomy, load_taxonomy
+from .taxonomy import RESOURCE_DIR, Taxonomy, load_taxonomy
 
 ADVISORY_PATH = RESOURCE_DIR / "advisory.json"
 

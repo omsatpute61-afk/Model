@@ -2,8 +2,6 @@
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
-
 from cropguard.early_warning import (
     ALERT_LEVELS,
     Detection,

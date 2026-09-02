@@ -2,8 +2,7 @@
 
 import pytest
 
-from cropguard.advisory import URGENCY_ORDER, AdvisoryEngine, default_engine
-from cropguard.taxonomy import load_taxonomy
+from cropguard.advisory import URGENCY_ORDER, default_engine
 
 
 @pytest.fixture(scope="module")

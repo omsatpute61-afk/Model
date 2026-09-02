@@ -4,6 +4,11 @@
 # offline run where ImageNet weights cannot be downloaded. The pretrained:
 # false path automatically disables the frozen warm-start and trains the trunk
 # at full LR - freezing a randomly initialised trunk learns nothing.
+#
+# Expect validation accuracy to sit at chance for roughly the first 10 epochs
+# while the training loss falls. That is BatchNorm running statistics catching
+# up with a randomly initialised trunk, not a stalled run. Budget epochs
+# accordingly - this config uses 60 for that reason.
 
 run_name: cropguard-nano
 output_dir: artifacts/runs

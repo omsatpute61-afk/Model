@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import torch
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageFilter
 from torchvision import transforms as T
 
 #: ImageNet statistics - kept here as the single source of truth. The exported

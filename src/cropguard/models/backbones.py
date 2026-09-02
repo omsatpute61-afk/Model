@@ -15,7 +15,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
-import torch
 import torch.nn as nn
 
 #: name -> (torchvision factory, weights enum name, feature dim)

@@ -26,14 +26,13 @@ Pure standard library - this runs on the gateway alongside the classifier.
 
 from __future__ import annotations
 
-import math
 import statistics
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import Iterable, Sequence
+from typing import Sequence
 
-from .advisory import URGENCY_ORDER, AdvisoryEngine, default_engine
+from .advisory import AdvisoryEngine, default_engine
 from .taxonomy import Taxonomy, load_taxonomy
 
 ALERT_LEVELS = ("none", "info", "watch", "warning", "critical")

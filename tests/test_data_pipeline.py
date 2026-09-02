@@ -15,7 +15,6 @@ from cropguard.data.manifest import (
     read_manifest,
     scan_image_folder,
     stratified_group_split,
-    write_manifest,
 )
 
 
