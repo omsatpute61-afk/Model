@@ -33,6 +33,14 @@ CATEGORIES: tuple[str, ...] = (
 #: Ordinal severity head. ``none`` is used for healthy / background samples.
 SEVERITY_LEVELS: tuple[str, ...] = ("none", "low", "moderate", "severe")
 
+#: Life stage of an observed pest. AP162 labels larva and adult as separate
+#: classes; we merge those into one pest class and keep the stage here, because
+#: the stage changes the advice ("adults on a trap: count nightly, do not spray"
+#: vs "larvae in the whorl: treat the affected plants today") while the species
+#: identification does not. ``unknown`` is the normal state for disease,
+#: deficiency and abiotic images and is masked out of the loss.
+LIFE_STAGES: tuple[str, ...] = ("unknown", "egg", "larva", "nymph", "adult")
+
 #: How fast a problem spreads if it is left alone. Drives alert urgency.
 SPREAD_RISK_ORDER: tuple[str, ...] = ("none", "low", "medium", "high", "very_high")
 
@@ -52,6 +60,10 @@ class CropClass:
     aliases: tuple[str, ...] = ()
     vector: str | None = None
     etl: dict | None = None
+    #: True for family/genus-level classes whose economic threshold is only
+    #: defined per species and per crop, so no single number can be quoted.
+    generic: bool = False
+    etl_note: str = ""
 
     @property
     def is_actionable(self) -> bool:
@@ -208,6 +220,10 @@ class Taxonomy:
                 d["vector"] = c.vector
             if c.etl:
                 d["etl"] = c.etl
+            if c.generic:
+                d["generic"] = True
+            if c.etl_note:
+                d["etl_note"] = c.etl_note
             out.append(d)
         return out
 
@@ -241,6 +257,8 @@ def _class_from_dict(d: dict) -> CropClass:
         aliases=tuple(d.get("aliases", ())),
         vector=d.get("vector"),
         etl=d.get("etl"),
+        generic=bool(d.get("generic", False)),
+        etl_note=d.get("etl_note", ""),
     )
 
 
@@ -270,6 +288,7 @@ def save_taxonomy(taxonomy: Taxonomy, path: str | Path) -> None:
 __all__ = [
     "CATEGORIES",
     "SEVERITY_LEVELS",
+    "LIFE_STAGES",
     "SPREAD_RISK_ORDER",
     "CropClass",
     "Taxonomy",

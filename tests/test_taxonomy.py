@@ -42,10 +42,21 @@ def test_unknown_folder_returns_none_rather_than_guessing(taxonomy):
 
 
 def test_pest_classes_carry_an_economic_threshold(taxonomy):
+    """Every pest must say when to act - or say explicitly that it cannot.
+
+    Family-level classes (Pyralidae, Tortricidae) have no single published
+    threshold, so they are marked ``generic`` and carry a note instead. What
+    must never happen is a species-level pest silently lacking one, because
+    then the advisory cannot tell a farmer when a spray is justified.
+    """
     for c in taxonomy:
-        if c.category == "pest":
-            assert c.etl, f"{c.id} has no ETL - advisories cannot say when to spray"
-            assert c.etl.get("threshold", 0) > 0
+        if c.category != "pest":
+            continue
+        if c.generic:
+            assert c.etl_note, f"{c.id} is generic but explains nothing about thresholds"
+            continue
+        assert c.etl, f"{c.id} has no ETL and is not marked generic"
+        assert c.etl.get("threshold", 0) > 0
 
 
 def test_index_order_is_stable_and_round_trips(taxonomy):

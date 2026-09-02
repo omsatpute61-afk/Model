@@ -33,7 +33,9 @@ from ..taxonomy import Taxonomy, load_taxonomy
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
 
-MANIFEST_FIELDS = ("path", "class_id", "category", "severity", "group", "split", "source")
+MANIFEST_FIELDS = (
+    "path", "class_id", "category", "severity", "life_stage", "group", "split", "source",
+)
 
 #: Markers that indicate "another copy of the same leaf" rather than a new
 #: sample. Deliberately conservative: a trailing number is usually the sample's
@@ -53,6 +55,7 @@ class Record:
     class_id: str
     category: str
     severity: str = "unknown"
+    life_stage: str = "unknown"
     group: str = ""
     split: str = "train"
     source: str = ""
@@ -64,14 +67,18 @@ class Record:
 def default_group_key(path: Path) -> str:
     """Group images that are copies/frames of the same physical leaf.
 
-    ``tomato__late_blight__sev-low__0003.jpg`` and its augmented siblings all
-    collapse to ``tomato__late_blight``; PlantVillage's
-    ``0a1b2c___RS_Late.B 4977.JPG`` style names collapse on their UUID prefix.
+    ``tomato__late_blight__leaf0003__sev-low.jpg`` and its augmented siblings
+    collapse to one group; a plain ``img_0042.jpg`` stays its own.
+
+    The key is qualified by the image's **full directory path**, not just the
+    folder name. In a nested ``Crop/Class`` dataset many crops have a folder
+    called ``healthy`` containing ``healthy_0000.jpg``, so a name-only key
+    silently merges maize and soybean images into one group - which then
+    straddles two splits and shows up as leakage.
     """
-    stem = path.stem
-    stem = _GROUP_MARKERS.sub("", stem)
-    stem = re.sub(r"[\s_-]+$", "", stem)
-    return f"{path.parent.name}/{stem}" if stem else f"{path.parent.name}/{path.stem}"
+    stem = _GROUP_MARKERS.sub("", path.stem)
+    stem = re.sub(r"[\s_-]+$", "", stem) or path.stem
+    return f"{path.parent.as_posix()}/{stem}"
 
 
 def parse_severity(path: Path) -> str:
@@ -191,6 +198,7 @@ def read_manifest(path: str | Path, split: str | None = None) -> list[Record]:
                     class_id=row["class_id"],
                     category=row.get("category", ""),
                     severity=row.get("severity", "unknown"),
+                    life_stage=row.get("life_stage", "unknown"),
                     group=row.get("group", ""),
                     split=row.get("split", "train"),
                     source=row.get("source", ""),
@@ -224,6 +232,8 @@ def manifest_summary(records: Sequence[Record]) -> dict:
         "classes_missing_val": sorted(k for k, v in per_class.items() if not v.get("val")),
         "leaked_groups": leaked,
         "severity": dict(Counter(r.severity for r in records)),
+        "life_stage": dict(Counter(r.life_stage for r in records)),
+        "sources": dict(Counter(r.source for r in records)),
     }
 
 

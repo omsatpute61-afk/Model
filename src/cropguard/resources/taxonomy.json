@@ -564,8 +564,7 @@
       "spread_risk": "medium",
       "symptoms": "Elongated orange-brown pustules on the lower leaf surface, leaves drying prematurely.",
       "aliases": [
-        "Sugarcane___Rust",
-        "Rust"
+        "Sugarcane___Rust"
       ]
     },
     {
@@ -579,8 +578,7 @@
       "symptoms": "Intense yellowing of the midrib on the underside spreading into the lamina, tip necrosis, reduced growth.",
       "vector": "pest__aphid",
       "aliases": [
-        "Sugarcane___Yellow",
-        "Yellow"
+        "Sugarcane___Yellow"
       ]
     },
     {
@@ -686,8 +684,7 @@
       },
       "aliases": [
         "Helicoverpa_armigera",
-        "bollworm",
-        "pod_borer"
+        "bollworm"
       ]
     },
     {
@@ -751,27 +748,6 @@
       ]
     },
     {
-      "id": "pest__jassid",
-      "crop": "cotton",
-      "name": "Jassid / leafhopper",
-      "category": "pest",
-      "agent": "Amrasca biguttula biguttula",
-      "agent_type": "insect",
-      "spread_risk": "high",
-      "symptoms": "Wedge-shaped green hoppers that run sideways; leaf margins yellow then turn red-brown and cup downward ('hopper burn').",
-      "etl": {
-        "unit": "nymphs_per_leaf",
-        "threshold": 2.0,
-        "stage": "vegetative",
-        "note": "2 nymphs/leaf on the top 3 leaves"
-      },
-      "aliases": [
-        "jassid",
-        "leafhopper",
-        "Amrasca_biguttula"
-      ]
-    },
-    {
       "id": "pest__green_leafhopper",
       "crop": "rice",
       "name": "Green leafhopper",
@@ -828,7 +804,6 @@
         "note": "5% dead hearts or 1 egg mass/m2"
       },
       "aliases": [
-        "stem_borer",
         "yellow_stem_borer",
         "Scirpophaga"
       ]
@@ -1084,6 +1059,856 @@
         "waterlogging",
         "flood_damage"
       ]
+    },
+    {
+      "id": "soybean__healthy",
+      "crop": "soybean",
+      "name": "Healthy soybean",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Uniform green trifoliate leaves, no mottling or pustules.",
+      "aliases": [
+        "Soybean___healthy"
+      ]
+    },
+    {
+      "id": "mango__healthy",
+      "crop": "mango",
+      "name": "Healthy mango",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Dark green leathery leaves, clean panicles, no sooty coating.",
+      "aliases": [
+        "Mango___healthy"
+      ]
+    },
+    {
+      "id": "citrus__healthy",
+      "crop": "citrus",
+      "name": "Healthy citrus",
+      "category": "healthy",
+      "agent": null,
+      "agent_type": "none",
+      "spread_risk": "none",
+      "symptoms": "Glossy dark green leaves with a symmetric blade, no mottling or corky lesions.",
+      "aliases": [
+        "Citrus___healthy"
+      ]
+    },
+    {
+      "id": "soybean__rust",
+      "crop": "soybean",
+      "name": "Soybean rust",
+      "category": "disease",
+      "agent": "Phakopsora pachyrhizi",
+      "agent_type": "fungus",
+      "spread_risk": "very_high",
+      "symptoms": "Small angular tan lesions on the underside bearing raised volcano-shaped pustules; rapid defoliation from the bottom up.",
+      "aliases": [
+        "Soybean___Rust"
+      ]
+    },
+    {
+      "id": "soybean__bacterial_blight",
+      "crop": "soybean",
+      "name": "Bacterial blight",
+      "category": "disease",
+      "agent": "Pseudomonas savastanoi pv. glycinea",
+      "agent_type": "bacterium",
+      "spread_risk": "high",
+      "symptoms": "Small angular water-soaked spots with a yellow halo that dry to brown and tear out, leaving a ragged leaf.",
+      "aliases": [
+        "Soybean___Bacterial_blight"
+      ]
+    },
+    {
+      "id": "soybean__frogeye_leaf_spot",
+      "crop": "soybean",
+      "name": "Frogeye leaf spot",
+      "category": "disease",
+      "agent": "Cercospora sojina",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Circular spots with grey centres and a distinct reddish-brown ring, mostly on the upper leaves.",
+      "aliases": [
+        "Soybean___Frogeye_leaf_spot"
+      ]
+    },
+    {
+      "id": "soybean__anthracnose",
+      "crop": "soybean",
+      "name": "Anthracnose",
+      "category": "disease",
+      "agent": "Colletotrichum truncatum",
+      "agent_type": "fungus",
+      "spread_risk": "high",
+      "symptoms": "Irregular brown blotches on stems and pods studded with black setae-bearing acervuli; pods stay flat and empty.",
+      "aliases": [
+        "Soybean___Anthracnose"
+      ]
+    },
+    {
+      "id": "soybean__yellow_mosaic",
+      "crop": "soybean",
+      "name": "Yellow mosaic",
+      "category": "disease",
+      "agent": "Mungbean yellow mosaic India virus (whitefly-vectored)",
+      "agent_type": "virus",
+      "spread_risk": "very_high",
+      "symptoms": "Bright yellow irregular patches interspersed with green, spreading until whole leaflets turn golden; pods small and distorted.",
+      "aliases": [
+        "Soybean___Yellow_mosaic"
+      ],
+      "vector": "pest__whitefly"
+    },
+    {
+      "id": "mango__anthracnose",
+      "crop": "mango",
+      "name": "Anthracnose",
+      "category": "disease",
+      "agent": "Colletotrichum gloeosporioides",
+      "agent_type": "fungus",
+      "spread_risk": "very_high",
+      "symptoms": "Black sunken spots on leaves, blossom blight that blackens the panicle, and expanding black rot on ripening fruit.",
+      "aliases": [
+        "Mango___Anthracnose"
+      ]
+    },
+    {
+      "id": "mango__powdery_mildew",
+      "crop": "mango",
+      "name": "Powdery mildew",
+      "category": "disease",
+      "agent": "Oidium mangiferae",
+      "agent_type": "fungus",
+      "spread_risk": "high",
+      "symptoms": "White powdery coating on panicles, young fruit and leaf undersides, followed by heavy flower and fruitlet drop.",
+      "aliases": [
+        "Mango___Powdery_mildew"
+      ]
+    },
+    {
+      "id": "mango__malformation",
+      "crop": "mango",
+      "name": "Malformation",
+      "category": "disease",
+      "agent": "Fusarium mangiferae",
+      "agent_type": "fungus",
+      "spread_risk": "high",
+      "symptoms": "Compact bunched shoots with shortened internodes, or a dense sterile panicle of stunted flowers that sets no fruit.",
+      "aliases": [
+        "Mango___Malformation"
+      ]
+    },
+    {
+      "id": "mango__sooty_mould",
+      "crop": "mango",
+      "name": "Sooty mould",
+      "category": "disease",
+      "agent": "Capnodium spp. growing on insect honeydew",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Black soot-like film wiping off the leaf surface; always secondary to hoppers, mealybug or scale feeding above.",
+      "aliases": [
+        "Mango___Sooty_mould"
+      ],
+      "vector": "pest__mealybug"
+    },
+    {
+      "id": "mango__bacterial_black_spot",
+      "crop": "mango",
+      "name": "Bacterial black spot / canker",
+      "category": "disease",
+      "agent": "Xanthomonas citri pv. mangiferaeindicae",
+      "agent_type": "bacterium",
+      "spread_risk": "high",
+      "symptoms": "Angular water-soaked spots turning black and raised, often with a yellow halo, and star-shaped cracks on fruit.",
+      "aliases": [
+        "Mango___Bacterial_canker"
+      ]
+    },
+    {
+      "id": "citrus__greening_hlb",
+      "crop": "citrus",
+      "name": "Citrus greening (HLB)",
+      "category": "disease",
+      "agent": "Candidatus Liberibacter asiaticus (psyllid-vectored)",
+      "agent_type": "bacterium",
+      "spread_risk": "very_high",
+      "symptoms": "Asymmetric blotchy mottle that ignores the veins, yellow shoots on one limb, small lopsided fruit with aborted brown seeds.",
+      "aliases": [
+        "Citrus___Greening",
+        "Citrus___Huanglongbing"
+      ],
+      "vector": "pest__psyllid"
+    },
+    {
+      "id": "citrus__canker",
+      "crop": "citrus",
+      "name": "Citrus canker",
+      "category": "disease",
+      "agent": "Xanthomonas citri subsp. citri",
+      "agent_type": "bacterium",
+      "spread_risk": "very_high",
+      "symptoms": "Raised corky brown lesions with an oily margin and a yellow halo, on both leaf surfaces, twigs and fruit.",
+      "aliases": [
+        "Citrus___Canker",
+        "Citrus___Black_spot"
+      ]
+    },
+    {
+      "id": "citrus__gummosis",
+      "crop": "citrus",
+      "name": "Gummosis / foot rot",
+      "category": "disease",
+      "agent": "Phytophthora nicotianae / P. citrophthora",
+      "agent_type": "oomycete",
+      "spread_risk": "high",
+      "symptoms": "Amber gum oozing from bark cracks near the base, bark splitting, and a thinning chlorotic canopy above the affected sector.",
+      "aliases": [
+        "Citrus___Gummosis"
+      ]
+    },
+    {
+      "id": "citrus__scab",
+      "crop": "citrus",
+      "name": "Citrus scab",
+      "category": "disease",
+      "agent": "Elsinoe fawcettii",
+      "agent_type": "fungus",
+      "spread_risk": "medium",
+      "symptoms": "Corky wart-like raised scabs on leaves and rind, often distorting young leaves into a warped shape.",
+      "aliases": [
+        "Citrus___Scab"
+      ]
+    },
+    {
+      "id": "chilli__bacterial_spot",
+      "crop": "chilli",
+      "name": "Bacterial leaf spot",
+      "category": "disease",
+      "agent": "Xanthomonas euvesicatoria",
+      "agent_type": "bacterium",
+      "spread_risk": "high",
+      "symptoms": "Small water-soaked spots becoming angular, dark and slightly raised, with the leaf yellowing and dropping early.",
+      "aliases": [
+        "Pepper,_bell___Bacterial_spot",
+        "Pepper___Bacterial_spot"
+      ]
+    },
+    {
+      "id": "pest__tobacco_caterpillar",
+      "crop": "any",
+      "name": "Tobacco caterpillar (Spodoptera litura)",
+      "category": "pest",
+      "agent": "Spodoptera litura",
+      "agent_type": "insect",
+      "spread_risk": "very_high",
+      "symptoms": "Young larvae skeletonise leaves in a gregarious patch leaving a papery window; older larvae feed at night and hide in soil cracks by day.",
+      "aliases": [
+        "Spodoptera_litura",
+        "tobacco_caterpillar"
+      ],
+      "etl": {
+        "unit": "larvae_per_plant",
+        "threshold": 1.0,
+        "stage": "vegetative_to_pod",
+        "note": "1 larva/plant, or 10% defoliation before flowering (ICAR)"
+      }
+    },
+    {
+      "id": "pest__beet_armyworm",
+      "crop": "any",
+      "name": "Beet armyworm",
+      "category": "pest",
+      "agent": "Spodoptera exigua",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Pale green larvae with a fine wavy lateral stripe, scraping the leaf surface and boring into buds.",
+      "aliases": [
+        "Spodoptera_exigua"
+      ],
+      "etl": {
+        "unit": "larvae_per_plant",
+        "threshold": 2.0,
+        "stage": "vegetative",
+        "note": "2 larvae/plant"
+      }
+    },
+    {
+      "id": "pest__cutworm",
+      "crop": "any",
+      "name": "Cutworm",
+      "category": "pest",
+      "agent": "Agrotis spp.",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Seedlings cut clean off at ground level overnight; fat greasy grey larvae curl into a C when dug up near the stump.",
+      "aliases": [
+        "Agrotis",
+        "cutworm"
+      ],
+      "etl": {
+        "unit": "percent_plants_cut",
+        "threshold": 5.0,
+        "stage": "seedling",
+        "note": "5% seedlings cut, or 1 larva per metre of row"
+      }
+    },
+    {
+      "id": "pest__hairy_caterpillar",
+      "crop": "any",
+      "name": "Red hairy caterpillar",
+      "category": "pest",
+      "agent": "Amsacta / Spilarctia spp.",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Dense reddish-brown hairy larvae marching in swarms and stripping leaves to the midrib, typically after the first monsoon showers.",
+      "aliases": [
+        "Amsacta",
+        "Aloa_lactinea"
+      ],
+      "etl": {
+        "unit": "larvae_per_metre_row",
+        "threshold": 5.0,
+        "stage": "early_vegetative",
+        "note": "5 larvae/m row"
+      }
+    },
+    {
+      "id": "pest__hornworm",
+      "crop": "tomato",
+      "name": "Hornworm",
+      "category": "pest",
+      "agent": "Manduca spp.",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Very large green larva with diagonal side stripes and a horn at the tail; heavy defoliation of the top of the plant plus large dark frass pellets.",
+      "aliases": [
+        "Manduca",
+        "hornworm"
+      ],
+      "etl": {
+        "unit": "larvae_per_plant",
+        "threshold": 1.0,
+        "stage": "fruiting",
+        "note": "1 larva/plant"
+      }
+    },
+    {
+      "id": "pest__pod_borer",
+      "crop": "soybean",
+      "name": "Pod borer",
+      "category": "pest",
+      "agent": "Etiella zinckenella / Maruca vitrata",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Neat round exit holes in pods with frass at the entry; opened pods show a larva and partly eaten seed.",
+      "aliases": [
+        "Etiella_zinckenella"
+      ],
+      "etl": {
+        "unit": "percent_pods_damaged",
+        "threshold": 5.0,
+        "stage": "podding",
+        "note": "5% pods bored"
+      }
+    },
+    {
+      "id": "pest__stem_borer",
+      "crop": "maize",
+      "name": "Stem borer",
+      "category": "pest",
+      "agent": "Sesamia / Chilo spp.",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Central shoot dries into a dead heart that pulls out easily; the split stem shows a tunnel packed with frass.",
+      "aliases": [
+        "Sesamia_inferens"
+      ],
+      "etl": {
+        "unit": "percent_dead_hearts",
+        "threshold": 5.0,
+        "stage": "vegetative",
+        "note": "5% dead hearts"
+      }
+    },
+    {
+      "id": "pest__shoot_borer",
+      "crop": "any",
+      "name": "Shoot and fruit borer",
+      "category": "pest",
+      "agent": "Conogethes / Leucinodes spp.",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Wilted drooping shoot tips with a bore hole and frass; fruit shows a plugged entry hole and internal tunnelling.",
+      "aliases": [
+        "Dichocrocis_punctiferalis",
+        "Conogethes"
+      ],
+      "etl": {
+        "unit": "percent_shoots_bored",
+        "threshold": 5.0,
+        "stage": "vegetative_to_fruiting",
+        "note": "5% shoots or fruits bored"
+      }
+    },
+    {
+      "id": "pest__pyralid_borer",
+      "crop": "any",
+      "name": "Pyralid borer",
+      "category": "pest",
+      "agent": "Pyralidae",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Webbed and tied leaves or bored stems with frass at the entry, the larva concealed inside the shelter.",
+      "aliases": [
+        "Pyralidae"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__looper",
+      "crop": "any",
+      "name": "Looper / semilooper",
+      "category": "pest",
+      "agent": "Geometridae, Chrysodeixis spp.",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Caterpillars that arch the body into a loop as they walk, chewing ragged holes between the veins.",
+      "aliases": [
+        "Geometridae",
+        "semilooper"
+      ],
+      "etl": {
+        "unit": "larvae_per_plant",
+        "threshold": 3.0,
+        "stage": "vegetative",
+        "note": "3 larvae/plant"
+      }
+    },
+    {
+      "id": "pest__leafroller",
+      "crop": "any",
+      "name": "Leafroller / leaf tier",
+      "category": "pest",
+      "agent": "Tortricidae",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Leaves rolled or tied with silk into a tube, the larva feeding inside on the enclosed surface.",
+      "aliases": [
+        "Tortricidae"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__bagworm",
+      "crop": "any",
+      "name": "Bagworm",
+      "category": "pest",
+      "agent": "Psychidae, Eumeta spp.",
+      "agent_type": "insect",
+      "spread_risk": "low",
+      "symptoms": "Spindle-shaped cases of silk and leaf fragments hanging from twigs, moving as the larva inside feeds.",
+      "aliases": [
+        "Psychidae",
+        "Eumeta_variegata"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__citrus_butterfly",
+      "crop": "citrus",
+      "name": "Citrus butterfly (lemon butterfly)",
+      "category": "pest",
+      "agent": "Papilio demoleus / Papilio spp.",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Young larvae mimic bird droppings, older ones are large and green with eyespots; they strip flush leaves on young citrus.",
+      "aliases": [
+        "Papilio_xuthus",
+        "Papilio_polytes",
+        "Papilionidae"
+      ],
+      "etl": {
+        "unit": "larvae_per_plant",
+        "threshold": 2.0,
+        "stage": "flush",
+        "note": "2 larvae/plant on nursery and young trees"
+      }
+    },
+    {
+      "id": "pest__leafhopper",
+      "crop": "any",
+      "name": "Leafhopper / jassid",
+      "category": "pest",
+      "agent": "Cicadellidae - Amrasca biguttula biguttula (cotton jassid), Empoasca spp.",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Wedge-shaped green hoppers that run sideways; leaf margins yellow then turn red-brown and cup downward ('hopper burn').",
+      "aliases": [
+        "Amrasca_biguttula",
+        "Cicadellidae",
+        "jassid",
+        "leafhopper"
+      ],
+      "etl": {
+        "unit": "nymphs_per_leaf",
+        "threshold": 2.0,
+        "stage": "vegetative",
+        "note": "2 nymphs/leaf on the top 3 leaves"
+      }
+    },
+    {
+      "id": "pest__planthopper",
+      "crop": "any",
+      "name": "Planthopper",
+      "category": "pest",
+      "agent": "Delphacidae",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Hoppers clustered low on the stem, sooty mould on their honeydew, and circular drying patches spreading through the field.",
+      "aliases": [
+        "Delphacidae",
+        "planthopper"
+      ],
+      "etl": {
+        "unit": "hoppers_per_plant",
+        "threshold": 10.0,
+        "stage": "vegetative_to_flowering",
+        "note": "10 hoppers/plant with natural enemies absent"
+      }
+    },
+    {
+      "id": "pest__psyllid",
+      "crop": "citrus",
+      "name": "Citrus psyllid",
+      "category": "pest",
+      "agent": "Diaphorina citri",
+      "agent_type": "insect",
+      "spread_risk": "very_high",
+      "symptoms": "Tiny brown adults resting at 45 degrees on flush, yellow nymphs excreting white waxy tubules; the vector of citrus greening.",
+      "aliases": [
+        "Psyllidae",
+        "Diaphorina_citri"
+      ],
+      "etl": {
+        "unit": "adults_per_flush_shoot",
+        "threshold": 0.5,
+        "stage": "flush",
+        "note": "Any psyllid on flush is actionable where greening is present"
+      }
+    },
+    {
+      "id": "pest__mirid_bug",
+      "crop": "cotton",
+      "name": "Mirid bug",
+      "category": "pest",
+      "agent": "Apolygus lucorum / Lygus spp.",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Slender green bugs feeding on squares and terminals; damaged squares shed and terminals become blind and bushy.",
+      "aliases": [
+        "Apolygus_lucorum"
+      ],
+      "etl": {
+        "unit": "bugs_per_plant",
+        "threshold": 2.0,
+        "stage": "squaring",
+        "note": "2 bugs/plant"
+      }
+    },
+    {
+      "id": "pest__stink_bug",
+      "crop": "any",
+      "name": "Stink bug",
+      "category": "pest",
+      "agent": "Pentatomidae and allied shield bugs",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Shield-shaped bugs on pods and grain; feeding punctures leave sunken corky spots and shrivelled or discoloured seed.",
+      "aliases": [
+        "Pentatomidae",
+        "Nezara_viridula",
+        "stink_bug"
+      ],
+      "etl": {
+        "unit": "bugs_per_metre_row",
+        "threshold": 1.0,
+        "stage": "podding_to_grain_fill",
+        "note": "1 bug/m row on soybean at pod fill"
+      }
+    },
+    {
+      "id": "pest__lanternfly",
+      "crop": "grape",
+      "name": "Lanternfly",
+      "category": "pest",
+      "agent": "Lycorma delicatula",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Large planthoppers massing on trunks and canes with copious honeydew and sooty mould beneath.",
+      "aliases": [
+        "Lycorma_delicatula"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__scale_insect",
+      "crop": "any",
+      "name": "Scale insect",
+      "category": "pest",
+      "agent": "Coccidae, Diaspididae",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Immobile waxy or armoured bumps on twigs, leaves and fruit that scrape off to reveal the insect; honeydew and sooty mould below.",
+      "aliases": [
+        "Coccidae",
+        "Diaspididae",
+        "scale_insect"
+      ],
+      "etl": {
+        "unit": "percent_twigs_infested",
+        "threshold": 10.0,
+        "stage": "any",
+        "note": "10% twigs infested"
+      }
+    },
+    {
+      "id": "pest__eriophyid_mite",
+      "crop": "any",
+      "name": "Eriophyid mite",
+      "category": "pest",
+      "agent": "Eriophyidae (Aceria spp.)",
+      "agent_type": "mite",
+      "spread_risk": "medium",
+      "symptoms": "Microscopic mites causing erineum felt patches, bud proliferation or silvery russeting; damage is visible long before the mite is.",
+      "aliases": [
+        "Eriophyidae"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__white_grub",
+      "crop": "any",
+      "name": "White grub",
+      "category": "pest",
+      "agent": "Scarabaeidae (Holotrichia spp.)",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Plants wilt and pull out with the roots eaten away; fat C-shaped white grubs with a brown head lie in the root zone.",
+      "aliases": [
+        "Scarabaeidae",
+        "white_grub"
+      ],
+      "etl": {
+        "unit": "grubs_per_square_metre",
+        "threshold": 1.0,
+        "stage": "vegetative",
+        "note": "1 grub/m2, or 10% plants wilting in patches"
+      }
+    },
+    {
+      "id": "pest__wireworm",
+      "crop": "any",
+      "name": "Wireworm",
+      "category": "pest",
+      "agent": "Elateridae larvae",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Hard shiny orange-brown larvae boring into seed and underground stems, causing patchy stands and wilted seedlings.",
+      "aliases": [
+        "Elateroidea",
+        "wireworm"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__leaf_beetle",
+      "crop": "any",
+      "name": "Leaf beetle",
+      "category": "pest",
+      "agent": "Chrysomelidae",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Small hard-shelled beetles chewing round holes or shot-holes and grazing long window-like strips from the leaf.",
+      "aliases": [
+        "Chrysomelidae",
+        "Monolepta_signata"
+      ],
+      "etl": {
+        "unit": "beetles_per_plant",
+        "threshold": 2.0,
+        "stage": "vegetative",
+        "note": "2 beetles/plant"
+      }
+    },
+    {
+      "id": "pest__hadda_beetle",
+      "crop": "any",
+      "name": "Hadda beetle (epilachna)",
+      "category": "pest",
+      "agent": "Epilachna vigintioctopunctata",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Adults and spiny yellow grubs both graze the leaf in parallel arcs, leaving a lace-like skeleton of veins.",
+      "aliases": [
+        "Epilachna_vigintioctopunctata",
+        "hadda_beetle"
+      ],
+      "etl": {
+        "unit": "beetles_per_plant",
+        "threshold": 2.0,
+        "stage": "vegetative",
+        "note": "2 beetles or grubs/plant"
+      }
+    },
+    {
+      "id": "pest__weevil",
+      "crop": "any",
+      "name": "Weevil",
+      "category": "pest",
+      "agent": "Curculionidae",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Snouted beetles notching leaf margins or boring into stems and fruit; larvae tunnel inside unseen.",
+      "aliases": [
+        "Curculionidae",
+        "weevil"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__longhorn_borer",
+      "crop": "any",
+      "name": "Longhorn stem borer",
+      "category": "pest",
+      "agent": "Cerambycidae",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Long-antennae beetles; larvae tunnel in trunks and main stems, pushing out coarse frass from a round hole and killing the limb above.",
+      "aliases": [
+        "Cerambycidae"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__jewel_beetle",
+      "crop": "any",
+      "name": "Jewel beetle / stem borer",
+      "category": "pest",
+      "agent": "Buprestidae (Sphenoptera spp.)",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Metallic beetles whose flat-headed larvae mine under the bark, leaving a sunken dead strip and dieback of the shoot.",
+      "aliases": [
+        "Buprestidae"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__bark_beetle",
+      "crop": "any",
+      "name": "Bark beetle / shot-hole borer",
+      "category": "pest",
+      "agent": "Scolytidae",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Pin-sized round holes in the bark with fine sawdust, and galleries just beneath; attacks trees already under stress.",
+      "aliases": [
+        "Scolytidae"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__grasshopper",
+      "crop": "any",
+      "name": "Grasshopper / locust",
+      "category": "pest",
+      "agent": "Acrididae",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Ragged chewing from the leaf margin inward, and in outbreaks whole plants stripped to stems within a day.",
+      "aliases": [
+        "Acrididae",
+        "Atractomorpha_sinensis",
+        "Acrida_cinerea"
+      ],
+      "etl": {
+        "unit": "hoppers_per_square_metre",
+        "threshold": 5.0,
+        "stage": "any",
+        "note": "5 hoppers/m2; any swarm is an emergency"
+      }
+    },
+    {
+      "id": "pest__mole_cricket",
+      "crop": "any",
+      "name": "Mole cricket",
+      "category": "pest",
+      "agent": "Gryllotalpa spp.",
+      "agent_type": "insect",
+      "spread_risk": "medium",
+      "symptoms": "Seedlings toppling in rows with severed roots and raised soil tunnels visible after irrigation.",
+      "aliases": [
+        "Gryllotalpa"
+      ],
+      "generic": true,
+      "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
+    },
+    {
+      "id": "pest__termite",
+      "crop": "any",
+      "name": "Termite",
+      "category": "pest",
+      "agent": "Odontotermes spp.",
+      "agent_type": "insect",
+      "spread_risk": "high",
+      "symptoms": "Plants dry and pull out with the roots and stem base eaten hollow and packed with soil; earthen runways up the stem.",
+      "aliases": [
+        "Termitidae",
+        "termite"
+      ],
+      "etl": {
+        "unit": "percent_plants_damaged",
+        "threshold": 5.0,
+        "stage": "any",
+        "note": "5% plants damaged"
+      }
+    },
+    {
+      "id": "pest__snail_slug",
+      "crop": "any",
+      "name": "Snail / slug",
+      "category": "pest",
+      "agent": "Lissachatina fulica, Limacidae",
+      "agent_type": "mollusc",
+      "spread_risk": "medium",
+      "symptoms": "Irregular holes chewed from the leaf interior with silvery slime trails; damage appears overnight and in damp weather.",
+      "aliases": [
+        "Lissachatina_fulica",
+        "Limax_maximus"
+      ],
+      "etl": {
+        "unit": "molluscs_per_square_metre",
+        "threshold": 2.0,
+        "stage": "any",
+        "note": "2/m2, or fresh slime and holes on 10% of plants"
+      }
     }
   ]
 }

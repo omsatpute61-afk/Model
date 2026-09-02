@@ -73,24 +73,48 @@ python -m cropguard.benchmark --bundle artifacts/runs/demo/export --compare
 
 ## Training on real data
 
-Point `--source` at any ImageFolder-style dataset; folder names are matched
-against the taxonomy's alias table, so upstream naming works unchanged.
+The target corpora are **DLCPD-25** (232k images, 25 crops, field-collected and
+long-tailed) and **AP162** (194k images, 162 pest species). One command runs
+ingest → clean → split → EDA:
 
 ```bash
-python scripts/prepare_dataset.py \
-    --source data/PlantVillage \
-    --source data/rice_leaf_diseases \
-    --source data/kvk_scouting_photos \
-    --out artifacts/data/manifest.csv --min-per-class 25
+python scripts/prepare_real_dataset.py \
+    --dlcpd /data/DLCPD-25 \
+    --ap162 /data/AP162 --ap162-classes /data/AP162/classes.txt \
+    --out artifacts/data/real --min-per-class 40 --workers 8
 
-python -m cropguard.train --config configs/default.yaml
+python -m cropguard.train --config configs/default.yaml \
+    --manifest artifacts/data/real/manifest.csv \
+    --set data.taxonomy=artifacts/data/real/taxonomy.json
 ```
 
-Unmapped folders are **listed, not silently dropped** — an unmapped folder is
-usually a class worth adding to `src/cropguard/resources/taxonomy.json`.
+See **[docs/real_datasets.md](docs/real_datasets.md)** for access (both are
+Baidu Netdisk only), licensing (**AP162 is academic-use-only** — a real
+constraint if this ever ships to farmers), and how to read the EDA report.
 
-To build a district-specific model (smaller, faster, more accurate), restrict
-the taxonomy: `--crops cotton` or `--classes a,b,c`.
+Scope is the ten highest-value Indian crops **grown on land**, all of which
+DLCPD-25 covers: wheat, cotton, maize, soybean, potato, tomato, chilli/pepper,
+mango, citrus, grape. Rice is out of scope by design. Four genuine top-ten
+crops — chickpea, mustard, groundnut, sugarcane — are absent from DLCPD-25 and
+need another source before the model can claim them.
+
+Any other ImageFolder dataset still works via `scripts/prepare_dataset.py
+--source ...`. Unmapped folders are **listed, not silently dropped** — an
+unmapped folder is usually a class worth adding to the taxonomy. To build a
+district-specific model, restrict it: `--crops cotton` or `--classes a,b,c`.
+
+### What the ingest and cleaning steps protect against
+
+Every one of these fails *silently* — the run completes and the metric looks fine:
+
+| Trap | What happens without the guard |
+|---|---|
+| DLCPD-25 is nested `Crop/Class/` | A flat scanner reads 25 crop-shaped labels; every disease of a crop collapses into one class and the model trains happily on the wrong problem. |
+| `Soybean/Rust` vs `Sugarcane/Rust` | Resolving a folder without its crop mislabels an entire class. The resolver tries crop-qualified names first and accepts a bare name only if the class belongs to that crop. |
+| Same image under two labels | Label noise that caps achievable accuracy. Reported individually, not just counted. |
+| Near-duplicates across a split | The model is evaluated on images it memorised. Grouping is by directory *and* stem; leakage is asserted. |
+| `Corn/healthy/healthy_0000.jpg` vs `Soybean/healthy/healthy_0000.jpg` | A folder-name-only group key merges two crops into one group, which then straddles splits. |
+| AP162 larva/adult as separate classes | Doubles the class count and splits scarce data. Merged into one pest class with the stage kept separately — adults on a trap mean *monitor*, larvae in the whorl mean *treat now*. |
 
 ---
 
@@ -255,7 +279,7 @@ src/cropguard/
 ├── evaluate.py          per-class metrics, confusions, thresholds
 ├── export.py            ONNX / INT8 / TorchScript, all verified
 ├── benchmark.py         latency, size, throughput on the target
-├── data/                manifest, field augmentation, synthetic generator
+├── data/                manifest, ingest, cleaning, EDA, augmentation, synthetic
 ├── models/              backbones, multi-head detector, losses
 ├── edge/                numpy preprocessing + onnxruntime runtime
 └── resources/           taxonomy.json, advisory.json
@@ -264,8 +288,8 @@ src/cropguard/
 ## Tests
 
 ```bash
-pytest -q -m "not slow"      # 109 unit tests, ~8 s
-pytest -q                    # all 124, including the full
+pytest -q -m "not slow"      # 132 unit tests, ~8 s
+pytest -q                    # all 147, including the full
                              # train -> export -> device -> advice run (~3 min)
 ```
 

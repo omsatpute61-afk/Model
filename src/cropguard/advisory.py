@@ -211,6 +211,8 @@ class AdvisoryEngine:
                     "vector matters more than treating the symptom."
                 )
 
+        if not crop_class.etl and crop_class.etl_note:
+            notes.append(crop_class.etl_note)
         if crop_class.etl:
             etl = crop_class.etl
             notes.append(
