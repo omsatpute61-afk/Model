@@ -56,7 +56,14 @@ from .model_card import DecisionPolicy, ModelCard, PreprocessSpec
 from .ood import OOD_FILENAME, MahalanobisOOD
 from .models.backbones import freeze_backbone, unfreeze_last_blocks
 from .models.detector import CropGuardNet, ModelConfig, ModelEMA, MultiHeadLoss
-from .taxonomy import CATEGORIES, SEVERITY_LEVELS, Taxonomy, load_taxonomy, save_taxonomy
+from .taxonomy import (
+    CATEGORIES,
+    LIFE_STAGES,
+    SEVERITY_LEVELS,
+    Taxonomy,
+    load_taxonomy,
+    save_taxonomy,
+)
 
 LOGGER = logging.getLogger("cropguard.train")
 
@@ -117,18 +124,20 @@ def collect_predictions(
 ) -> dict[str, np.ndarray]:
     """Run a split and return raw logits/targets for downstream metrics."""
     model.eval()
-    logits, cat_logits, sev_logits, embeddings = [], [], [], []
-    labels, cats, sevs, paths = [], [], [], []
+    logits, cat_logits, sev_logits, stage_logits, embeddings = [], [], [], [], []
+    labels, cats, sevs, stages, paths = [], [], [], [], []
     for batch in loader:
         images = batch["image"].to(device, non_blocking=True)
         out = model(images)
         logits.append(out.label_logits.float().cpu().numpy())
         cat_logits.append(out.category_logits.float().cpu().numpy())
         sev_logits.append(out.severity_logits.float().cpu().numpy())
+        stage_logits.append(out.life_stage_logits.float().cpu().numpy())
         embeddings.append(out.embedding.float().cpu().numpy())
         labels.append(batch["label"].numpy())
         cats.append(batch["category"].numpy())
         sevs.append(batch["severity"].numpy())
+        stages.append(batch["life_stage"].numpy())
         paths.extend(batch["path"])
     if not logits:
         raise ValueError("evaluation loader produced no batches")
@@ -136,10 +145,12 @@ def collect_predictions(
         "logits": np.concatenate(logits),
         "category_logits": np.concatenate(cat_logits),
         "severity_logits": np.concatenate(sev_logits),
+        "life_stage_logits": np.concatenate(stage_logits),
         "embeddings": np.concatenate(embeddings),
         "labels": np.concatenate(labels),
         "categories": np.concatenate(cats),
         "severities": np.concatenate(sevs),
+        "life_stages": np.concatenate(stages),
         "paths": np.array(paths),
     }
 
@@ -168,14 +179,14 @@ def evaluate_split(
         raw["categories"], cat_probs.argmax(1), list(CATEGORIES), probs=cat_probs
     )
 
-    sev_mask = raw["severities"] != IGNORE_INDEX
-    sev_acc = (
-        float(
-            (raw["severity_logits"][sev_mask].argmax(1) == raw["severities"][sev_mask]).mean()
-        )
-        if sev_mask.any()
-        else None
-    )
+    def _masked_accuracy(logits_key: str, target_key: str) -> float | None:
+        mask = raw[target_key] != IGNORE_INDEX
+        if not mask.any():
+            return None
+        return float((raw[logits_key][mask].argmax(1) == raw[target_key][mask]).mean())
+
+    sev_acc = _masked_accuracy("severity_logits", "severities")
+    stage_acc = _masked_accuracy("life_stage_logits", "life_stages")
 
     metrics = {
         "accuracy": report.accuracy,
@@ -186,6 +197,8 @@ def evaluate_split(
         "category_accuracy": cat_report.accuracy,
         "category_macro_f1": cat_report.macro_f1,
         "severity_accuracy": sev_acc,
+        "life_stage_accuracy": stage_acc,
+        "life_stage_labelled": int((raw["life_stages"] != IGNORE_INDEX).sum()),
         "ece": expected_calibration_error(probs, raw["labels"]),
     }
     raw["probs"] = probs
@@ -280,6 +293,7 @@ def train(cfg: TrainConfig, device: torch.device | None = None) -> dict:
     criterion = MultiHeadLoss(
         category_weight=cfg.optim.category_weight,
         severity_weight=cfg.optim.severity_weight,
+        life_stage_weight=cfg.optim.life_stage_weight,
         class_weights=None if cfg.data.balanced_sampling else weights,
         label_smoothing=cfg.optim.label_smoothing,
         use_focal=cfg.optim.use_focal,
@@ -337,7 +351,7 @@ def train(cfg: TrainConfig, device: torch.device | None = None) -> dict:
                 LOGGER.info("epoch %d: unfroze full trunk", epoch)
 
         model.train()
-        running = {"total": 0.0, "label": 0.0, "category": 0.0, "severity": 0.0}
+        running = {"total": 0.0, "label": 0.0, "category": 0.0, "severity": 0.0, "life_stage": 0.0}
         seen = 0
         for batch in loaders["train"]:
             lr_scale = cosine_lr(global_step, total_steps, warmup_steps, cfg.optim.min_lr_scale)
@@ -348,6 +362,7 @@ def train(cfg: TrainConfig, device: torch.device | None = None) -> dict:
             label = batch["label"].to(device, non_blocking=True)
             category = batch["category"].to(device, non_blocking=True)
             severity = batch["severity"].to(device, non_blocking=True)
+            life_stage = batch["life_stage"].to(device, non_blocking=True)
             valid = batch["valid"].to(device, non_blocking=True)
 
             soft = None
@@ -361,7 +376,9 @@ def train(cfg: TrainConfig, device: torch.device | None = None) -> dict:
             optimiser.zero_grad(set_to_none=True)
             with torch.amp.autocast("cuda", enabled=use_amp):
                 out = model(images)
-                loss, parts = criterion(out, label, category, severity, soft, valid)
+                loss, parts = criterion(
+                    out, label, category, severity, life_stage, soft, valid
+                )
 
             scaler.scale(loss).backward()
             if cfg.optim.grad_clip:
@@ -482,6 +499,7 @@ def train(cfg: TrainConfig, device: torch.device | None = None) -> dict:
         class_ids=list(taxonomy.class_ids),
         categories=list(CATEGORIES),
         severity_levels=list(SEVERITY_LEVELS),
+        life_stages=list(LIFE_STAGES),
         preprocess=PreprocessSpec(
             image_size=cfg.data.image_size, mean=IMAGENET_MEAN, std=IMAGENET_STD
         ),

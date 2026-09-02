@@ -45,6 +45,7 @@ class OptimConfig:
     focal_gamma: float = 2.0
     category_weight: float = 0.3
     severity_weight: float = 0.2
+    life_stage_weight: float = 0.15
     mixup_alpha: float = 0.0
     ema_decay: float = 0.999
     use_ema: bool = True

@@ -31,6 +31,50 @@ ADVISORY_PATH = RESOURCE_DIR / "advisory.json"
 
 URGENCY_ORDER: tuple[str, ...] = ("none", "info", "watch", "warning", "critical")
 
+#: What seeing a given life stage means for the decision to act. This is the
+#: whole reason the model carries a life-stage head: the species tells you what
+#: the problem is, the stage tells you whether today is the day to spend money
+#: on it. Spraying a field because moths appeared on a trap is the classic way
+#: to waste an application and select for resistance at the same time.
+LIFE_STAGE_GUIDANCE: dict[str, dict[str, object]] = {
+    "egg": {
+        "urgency_shift": 0,
+        "note": (
+            "Egg masses present - the damage has not started yet. This is the "
+            "cheapest moment to act: destroy the egg masses by hand, or time a "
+            "treatment for just after hatching rather than now."
+        ),
+        "action": "scout_and_time_treatment",
+    },
+    "larva": {
+        "urgency_shift": 1,
+        "note": (
+            "Larvae are the feeding stage - this is the damage happening now. "
+            "Treat while they are small and still exposed; older larvae bore in "
+            "and no spray reaches them."
+        ),
+        "action": "treat_affected_plants",
+    },
+    "nymph": {
+        "urgency_shift": 1,
+        "note": (
+            "Nymphs are feeding and cannot fly away, which makes them the easiest "
+            "stage to control. Target the leaf undersides where they sit."
+        ),
+        "action": "treat_affected_plants",
+    },
+    "adult": {
+        "urgency_shift": -1,
+        "note": (
+            "Adults indicate a flight, not established damage. Count them against "
+            "the trap threshold before spending on a spray - treating on moth "
+            "catch alone wastes the application and builds resistance. Expect "
+            "larvae in about a week and scout for them then."
+        ),
+        "action": "monitor_and_count",
+    },
+}
+
 #: Below this the model is telling us it does not really know. We never issue a
 #: spray recommendation on such a prediction - we ask for a better photo.
 DEFAULT_MIN_CONFIDENCE = 0.55
@@ -63,6 +107,7 @@ class Advisory:
     recheck_hours: int = 48
     confidence: float | None = None
     severity: str | None = None
+    life_stage: str | None = None
     needs_confirmation: bool = False
     notes: list[str] = field(default_factory=list)
     disclaimer: str = ""
@@ -102,6 +147,7 @@ class Advisory:
             "recheck_hours": self.recheck_hours,
             "confidence": self.confidence,
             "severity": self.severity,
+            "life_stage": self.life_stage,
             "needs_confirmation": self.needs_confirmation,
             "notes": list(self.notes),
             "disclaimer": self.disclaimer,
@@ -142,6 +188,7 @@ class AdvisoryEngine:
         severity: str | None = None,
         *,
         affected_fraction: float | None = None,
+        life_stage: str | None = None,
     ) -> Advisory:
         """Build the advisory for one prediction.
 
@@ -154,6 +201,9 @@ class AdvisoryEngine:
             acting or re-photographing.
         severity:
             Optional severity head output (``none``/``low``/``moderate``/``severe``).
+        life_stage:
+            Optional pest life stage. Changes whether the advice is "monitor"
+            or "treat now" - see :data:`LIFE_STAGE_GUIDANCE`.
         affected_fraction:
             Share of scouted plants showing the symptom, when the app has
             collected it. Turns a single-leaf finding into a field-level one.
@@ -203,6 +253,18 @@ class AdvisoryEngine:
                     "spot-treat that patch rather than the whole field."
                 )
 
+        action_override = None
+        if crop_class.category != "pest":
+            # A life stage on a leaf-spot image is meaningless. Drop it rather
+            # than record a value that had no bearing on the advice.
+            life_stage = None
+        elif life_stage:
+            guidance = LIFE_STAGE_GUIDANCE.get(life_stage)
+            if guidance:
+                urgency = _bump(urgency, int(guidance["urgency_shift"]))
+                notes.append(str(guidance["note"]))
+                action_override = str(guidance["action"])
+
         if crop_class.vector:
             vector = self.taxonomy.get(crop_class.vector)
             if vector is not None:
@@ -234,7 +296,7 @@ class AdvisoryEngine:
             display_name=crop_class.display_name,
             category=crop_class.category,
             urgency=urgency,
-            action=base.get("action", "scout_and_confirm"),
+            action=action_override or base.get("action", "scout_and_confirm"),
             headline=base.get("headline", crop_class.display_name),
             message=message,
             steps=list(base.get("steps", [])),
@@ -245,6 +307,7 @@ class AdvisoryEngine:
             recheck_hours=int(base.get("recheck_hours", 48)),
             confidence=confidence,
             severity=severity,
+            life_stage=life_stage,
             needs_confirmation=needs_confirmation,
             notes=notes,
             disclaimer=self.disclaimer,

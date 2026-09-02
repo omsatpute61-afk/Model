@@ -104,6 +104,7 @@ def export_onnx(
             "label_probs": {0: "batch"},
             "category_probs": {0: "batch"},
             "severity_probs": {0: "batch"},
+            "life_stage_probs": {0: "batch"},
             "embedding": {0: "batch"},
         }
         if dynamic_batch
@@ -123,7 +124,10 @@ def export_onnx(
         example,
         str(out_path),
         input_names=["image"],
-        output_names=["label_probs", "category_probs", "severity_probs", "embedding"],
+        output_names=[
+            "label_probs", "category_probs", "severity_probs",
+            "life_stage_probs", "embedding",
+        ],
         dynamic_axes=dynamic_axes,
         opset_version=opset,
         do_constant_folding=True,
@@ -486,15 +490,17 @@ def _embed_with_onnx(onnx_path: Path, card: ModelCard, paths: list[Path], batch:
     from .edge.preprocess import load_and_preprocess
 
     sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
-    if len(sess.get_outputs()) < 4:
-        raise RuntimeError("exported model has no embedding output")
+    names = [o.name for o in sess.get_outputs()]
+    if "embedding" not in names:
+        raise RuntimeError(f"exported model has no embedding output (has {names})")
+    index = names.index("embedding")   # resolve by name, not position
     name = sess.get_inputs()[0].name
 
     out = []
     for i in range(0, len(paths), batch):
         chunk = paths[i : i + batch]
         x = np.concatenate([load_and_preprocess(p, card.preprocess) for p in chunk], axis=0)
-        out.append(sess.run(None, {name: x})[3])
+        out.append(sess.run(None, {name: x})[index])
     return np.concatenate(out, axis=0)
 
 
@@ -542,7 +548,10 @@ def refit_ood_for_artifact(
     import onnxruntime as ort
 
     sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
-    noise_emb = sess.run(None, {sess.get_inputs()[0].name: noise})[3]
+    noise_names = [o.name for o in sess.get_outputs()]
+    noise_emb = sess.run(None, {sess.get_inputs()[0].name: noise})[
+        noise_names.index("embedding")
+    ]
     noise_reject = float(detector.is_ood(noise_emb).mean())
     in_reject = float(stats.val_reject_rate)
 

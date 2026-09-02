@@ -12,6 +12,7 @@ from cropguard.metrics import (
     select_threshold,
     selective_risk,
 )
+from cropguard.taxonomy import LIFE_STAGES
 from cropguard.models.detector import (
     CropGuardNet,
     ExportWrapper,
@@ -36,11 +37,33 @@ def test_forward_returns_all_four_heads(model):
 
 
 def test_export_wrapper_emits_probabilities_and_the_embedding(model):
-    probs = ExportWrapper(model, temperature=1.7)(torch.randn(3, 3, 64, 64))
-    assert len(probs) == 4
-    for p in probs[:3]:
+    out = ExportWrapper(model, temperature=1.7)(torch.randn(3, 3, 64, 64))
+    label, category, severity, life_stage, embedding = out
+    for p in (label, category, severity, life_stage):
         assert torch.allclose(p.sum(1), torch.ones(p.shape[0]), atol=1e-5)
-    assert probs[3].shape == (3, 32)
+    assert label.shape == (3, 7)
+    assert life_stage.shape == (3, len(LIFE_STAGES))
+    assert embedding.shape == (3, 32)
+
+
+def test_forward_includes_the_life_stage_head(model):
+    out = model(torch.randn(2, 3, 64, 64))
+    assert out.life_stage_logits.shape == (2, len(LIFE_STAGES))
+
+
+def test_life_stage_is_masked_when_unlabelled(model):
+    """Most images have no life-stage label; those must not train the head."""
+    out = model(torch.randn(4, 3, 64, 64))
+    loss = MultiHeadLoss()
+    label = torch.randint(0, 7, (4,))
+    cat = torch.randint(0, 6, (4,))
+    sev = torch.full((4,), -100)
+
+    _, none_labelled = loss(out, label, cat, sev, life_stage=torch.full((4,), -100))
+    assert none_labelled["life_stage"] == 0.0
+
+    _, some_labelled = loss(out, label, cat, sev, life_stage=torch.tensor([2, -100, 4, -100]))
+    assert some_labelled["life_stage"] > 0.0
 
 
 def test_temperature_actually_changes_the_distribution(model):

@@ -64,6 +64,7 @@ class ModelCard:
     class_ids: list[str] = field(default_factory=list)
     categories: list[str] = field(default_factory=list)
     severity_levels: list[str] = field(default_factory=list)
+    life_stages: list[str] = field(default_factory=list)
     preprocess: PreprocessSpec = field(default_factory=PreprocessSpec)
     policy: DecisionPolicy = field(default_factory=DecisionPolicy)
     pretrained: bool = True

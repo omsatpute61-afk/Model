@@ -120,13 +120,32 @@ Every one of these fails *silently* — the run completes and the metric looks f
 
 ## What the model is
 
-A single **MobileNetV3-Small** trunk (~1.1 M parameters) with three heads:
+A single **MobileNetV3-Small** trunk (~1.1 M parameters) with four heads:
 
 | Head | Output | Why |
 |---|---|---|
-| `label` | 70-way diagnosis | the actual answer |
+| `label` | 120-way diagnosis (105 for the ten crops) | the actual answer |
 | `category` | healthy / disease / pest / deficiency / abiotic / background | an easier problem, so when the fine head is unsure the device can still say *"this is a pest problem"* instead of nothing |
 | `severity` | none / low / moderate / severe | drives spot-treat vs treat-the-field; **masked** wherever the dataset has no severity label |
+| `life_stage` | egg / larva / nymph / adult | the species says *what*; the stage says whether **today** is the day to spend money on it |
+
+The life-stage head is why AP162's larva/adult class pairs are merged rather
+than kept apart: merging keeps the training data for a species together, and
+the stage is recovered here. It changes the advice, not the diagnosis:
+
+```
+pest__fall_armyworm + adult  ->  urgency warning,  action monitor_and_count
+   "Adults indicate a flight, not established damage. Count them against the
+    trap threshold before spending on a spray."
+pest__fall_armyworm + larva  ->  urgency critical, action treat_affected_plants
+   "Larvae are the feeding stage - this is the damage happening now. Treat
+    while they are small and still exposed."
+```
+
+Spraying a field because moths appeared on a trap is the classic way to waste
+an application and select for resistance at the same time. Both `severity` and
+`life_stage` are masked out of the loss wherever the dataset has no label —
+which is most of it — so they cost nothing on data that lacks them.
 
 Plus a 128-d embedding, exported alongside the probabilities, which is what the
 novelty detector scores.
@@ -288,8 +307,8 @@ src/cropguard/
 ## Tests
 
 ```bash
-pytest -q -m "not slow"      # 132 unit tests, ~8 s
-pytest -q                    # all 147, including the full
+pytest -q -m "not slow"      # 138 unit tests, ~8 s
+pytest -q                    # all 153, including the full
                              # train -> export -> device -> advice run (~3 min)
 ```
 

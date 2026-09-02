@@ -26,7 +26,7 @@ from PIL import Image
 from ..advisory import Advisory, AdvisoryEngine
 from ..model_card import CARD_FILENAME, ModelCard
 from ..ood import OOD_FILENAME, MahalanobisOOD
-from ..taxonomy import CATEGORIES, SEVERITY_LEVELS, Taxonomy, load_taxonomy
+from ..taxonomy import CATEGORIES, LIFE_STAGES, SEVERITY_LEVELS, Taxonomy, load_taxonomy
 from .preprocess import preprocess_image, tile_image
 
 LOGGER = logging.getLogger("cropguard.edge")
@@ -43,6 +43,8 @@ class Diagnosis:
     accepted: bool                       # False -> abstained, class_id is "unknown"
     severity: str | None = None
     severity_confidence: float | None = None
+    life_stage: str | None = None
+    life_stage_confidence: float | None = None
     topk: list[tuple[str, float]] = field(default_factory=list)
     novelty: float | None = None          # Mahalanobis distance in feature space
     is_novel: bool = False                # True -> unlike anything in training
@@ -63,6 +65,11 @@ class Diagnosis:
             "severity": self.severity,
             "severity_confidence": (
                 round(self.severity_confidence, 4) if self.severity_confidence is not None else None
+            ),
+            "life_stage": self.life_stage,
+            "life_stage_confidence": (
+                round(self.life_stage_confidence, 4)
+                if self.life_stage_confidence is not None else None
             ),
             "topk": [(c, round(p, 4)) for c, p in self.topk],
             "novelty": round(self.novelty, 3) if self.novelty is not None else None,
@@ -198,6 +205,11 @@ class EdgeClassifier:
                 str(self._model_path), opts, providers=["CPUExecutionProvider"]
             )
             self._input_name = self._session.get_inputs()[0].name
+            # Resolve outputs by NAME. Positional indexing broke the moment a
+            # head was added: the embedding moved from index 3 to 4, and an
+            # older bundle would have been scored against the wrong tensor
+            # without raising anything.
+            self._output_names = [o.name for o in self._session.get_outputs()]
             n_out = self._session.get_outputs()[0].shape[-1]
             if isinstance(n_out, int):
                 self.card.validate(num_outputs=n_out)
@@ -216,21 +228,34 @@ class EdgeClassifier:
                 self._torch_model = ExportWrapper(model, self.card.policy.temperature).eval()
 
     # -- inference -------------------------------------------------------
-    def _run(
-        self, batch: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray | None]:
-        """Returns (label_probs, category_probs, severity_probs, embedding)."""
+    #: Order the TorchScript / torch path returns its tuple in.
+    _TORCH_OUTPUT_ORDER = (
+        "label_probs", "category_probs", "severity_probs", "life_stage_probs", "embedding",
+    )
+
+    def _run(self, batch: np.ndarray) -> dict[str, np.ndarray]:
+        """Run the model and return its outputs keyed by name.
+
+        Older bundles have fewer heads; a missing head is simply absent from
+        the dict rather than being silently read off the wrong tensor.
+        """
         if self.backend == "onnx":
-            outs = self._session.run(None, {self._input_name: batch.astype(np.float32)})
+            values = self._session.run(None, {self._input_name: batch.astype(np.float32)})
+            names = self._output_names
         else:
             import torch
 
             with torch.no_grad():
-                outs = [t.numpy() for t in self._torch_model(torch.from_numpy(batch))]
-        embedding = outs[3] if len(outs) > 3 else None
-        while len(outs) < 3:
-            outs.append(np.zeros((batch.shape[0], 1), dtype=np.float32))
-        return outs[0], outs[1], outs[2], embedding
+                values = [t.numpy() for t in self._torch_model(torch.from_numpy(batch))]
+            names = self._TORCH_OUTPUT_ORDER[: len(values)]
+
+        outputs = dict(zip(names, values))
+        if "label_probs" not in outputs and values:
+            outputs["label_probs"] = values[0]   # unnamed export, first output is the label
+        return outputs
+
+    def _novelty_from(self, outputs: dict[str, np.ndarray], index: int) -> tuple[float | None, bool]:
+        return self._novelty(outputs.get("embedding"), index)
 
     def _novelty(self, embedding: np.ndarray | None, index: int) -> tuple[float | None, bool]:
         if self.ood is None or embedding is None or not self.ood.enabled:
@@ -246,7 +271,7 @@ class EdgeClassifier:
         batch = np.concatenate(
             [preprocess_image(im, self.card.preprocess) for im in images], axis=0
         )
-        return self._run(batch)[0]
+        return self._run(batch)["label_probs"]
 
     def diagnose(
         self,
@@ -258,11 +283,11 @@ class EdgeClassifier:
         img = _as_image(image)
         started = time.perf_counter()
         batch = preprocess_image(img, self.card.preprocess)
-        label_p, cat_p, sev_p, emb = self._run(batch)
+        outputs = self._run(batch)
         elapsed = (time.perf_counter() - started) * 1000.0
-        novelty, is_novel = self._novelty(emb, 0)
+        novelty, is_novel = self._novelty_from(outputs, 0)
         return self._decide(
-            label_p[0], cat_p[0], sev_p[0], elapsed,
+            outputs, 0, elapsed,
             with_advisory=with_advisory, affected_fraction=affected_fraction,
             novelty=novelty, is_novel=is_novel,
         )
@@ -277,14 +302,14 @@ class EdgeClassifier:
         batch = np.concatenate(
             [preprocess_image(im, self.card.preprocess) for im in imgs], axis=0
         )
-        label_p, cat_p, sev_p, emb = self._run(batch)
+        outputs = self._run(batch)
         per_image = (time.perf_counter() - started) * 1000.0 / len(imgs)
         out = []
         for i in range(len(imgs)):
-            novelty, is_novel = self._novelty(emb, i)
+            novelty, is_novel = self._novelty_from(outputs, i)
             out.append(
                 self._decide(
-                    label_p[i], cat_p[i], sev_p[i], per_image,
+                    outputs, i, per_image,
                     with_advisory=with_advisory, novelty=novelty, is_novel=is_novel,
                 )
             )
@@ -310,14 +335,14 @@ class EdgeClassifier:
         batch = np.concatenate(
             [preprocess_image(t, self.card.preprocess) for t, _ in tiles], axis=0
         )
-        label_p, cat_p, sev_p, emb = self._run(batch)
+        outputs = self._run(batch)
         elapsed = (time.perf_counter() - started) * 1000.0
 
         findings = []
         for i, (_, box) in enumerate(tiles):
-            novelty, is_novel = self._novelty(emb, i)
+            novelty, is_novel = self._novelty_from(outputs, i)
             d = self._decide(
-                label_p[i], cat_p[i], sev_p[i], elapsed / len(tiles),
+                outputs, i, elapsed / len(tiles),
                 with_advisory=False, novelty=novelty, is_novel=is_novel,
             )
             d.box = box
@@ -360,9 +385,8 @@ class EdgeClassifier:
     # -- decision --------------------------------------------------------
     def _decide(
         self,
-        label_probs: np.ndarray,
-        cat_probs: np.ndarray,
-        sev_probs: np.ndarray,
+        outputs: dict[str, np.ndarray],
+        index: int,
         latency_ms: float,
         with_advisory: bool = True,
         affected_fraction: float | None = None,
@@ -371,6 +395,10 @@ class EdgeClassifier:
     ) -> Diagnosis:
         policy = self.card.policy
         ids = self.card.class_ids
+        label_probs = outputs["label_probs"][index]
+        cat_probs = outputs.get("category_probs", np.zeros((index + 1, 0)))[index]
+        sev_probs = outputs.get("severity_probs", np.zeros((index + 1, 0)))[index]
+        stage_probs = outputs.get("life_stage_probs")
         order = np.argsort(-label_probs)
         top_idx = int(order[0])
         confidence = float(label_probs[top_idx])
@@ -418,11 +446,26 @@ class EdgeClassifier:
             si = int(np.argmax(sev_probs[: len(SEVERITY_LEVELS)]))
             severity, sev_conf = SEVERITY_LEVELS[si], float(sev_probs[si])
 
+        # Life stage is only meaningful for a pest. On a leaf-spot image the
+        # head still emits something, and reporting it would be noise.
+        life_stage = None
+        stage_conf = None
+        if (
+            stage_probs is not None
+            and crop_class is not None
+            and crop_class.category == "pest"
+            and stage_probs[index].size >= len(LIFE_STAGES)
+        ):
+            row = stage_probs[index]
+            # index 0 is "unknown" - the absence of a label, never a prediction
+            li = int(np.argmax(row[1: len(LIFE_STAGES)])) + 1
+            life_stage, stage_conf = LIFE_STAGES[li], float(row[li])
+
         if accepted:
             advisory = (
                 self.advisory_engine.advise(
                     class_id, confidence=confidence, severity=severity,
-                    affected_fraction=affected_fraction,
+                    affected_fraction=affected_fraction, life_stage=life_stage,
                 )
                 if with_advisory
                 else None
@@ -435,6 +478,8 @@ class EdgeClassifier:
                 accepted=True,
                 severity=severity,
                 severity_confidence=sev_conf,
+                life_stage=life_stage,
+                life_stage_confidence=stage_conf,
                 topk=topk,
                 novelty=novelty,
                 is_novel=is_novel,

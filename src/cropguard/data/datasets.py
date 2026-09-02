@@ -23,7 +23,7 @@ import torch
 from PIL import Image, ImageFile
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
-from ..taxonomy import CATEGORIES, SEVERITY_LEVELS, Taxonomy, load_taxonomy
+from ..taxonomy import CATEGORIES, LIFE_STAGES, SEVERITY_LEVELS, Taxonomy, load_taxonomy
 from .manifest import Record, read_manifest
 from .transforms import AugmentationConfig, build_eval_transform, build_train_transform
 
@@ -43,6 +43,7 @@ class Batch:
     label: torch.Tensor          # (B,)   fine-grained class index
     category: torch.Tensor       # (B,)   coarse group index
     severity: torch.Tensor       # (B,)   ordinal severity or IGNORE_INDEX
+    life_stage: torch.Tensor     # (B,)   pest life stage or IGNORE_INDEX
     valid: torch.Tensor          # (B,)   0 where the image failed to load
 
 
@@ -98,12 +99,19 @@ class CropDiagnosisDataset(Dataset):
             if rec.severity in SEVERITY_LEVELS
             else IGNORE_INDEX
         )
+        # "unknown" is the absence of a label, not a fifth stage to predict.
+        life_stage = (
+            LIFE_STAGES.index(rec.life_stage)
+            if rec.life_stage in LIFE_STAGES and rec.life_stage != "unknown"
+            else IGNORE_INDEX
+        )
         label = self.taxonomy.index_of(rec.class_id)
         return {
             "image": tensor,
             "label": label,
             "category": CATEGORIES.index(self.taxonomy[rec.class_id].category),
             "severity": severity,
+            "life_stage": life_stage,
             "valid": int(ok),
             "path": rec.path,
         }
@@ -115,6 +123,7 @@ def collate(samples: list[dict]) -> dict:
         "label": torch.tensor([s["label"] for s in samples], dtype=torch.long),
         "category": torch.tensor([s["category"] for s in samples], dtype=torch.long),
         "severity": torch.tensor([s["severity"] for s in samples], dtype=torch.long),
+        "life_stage": torch.tensor([s["life_stage"] for s in samples], dtype=torch.long),
         "valid": torch.tensor([s["valid"] for s in samples], dtype=torch.long),
         "path": [s["path"] for s in samples],
     }

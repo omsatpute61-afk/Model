@@ -118,6 +118,12 @@ changes the advice while the identification does not:
 * adults on a pheromone trap → *count nightly, do not spray yet*
 * larvae in the whorl → *treat the affected plants today*
 
+The stage is not just recorded, it is **predicted**: the model carries a
+`life_stage` head, and the advisory turns it into a different recommendation
+(`monitor_and_count` for adults, `treat_affected_plants` for larvae,
+`scout_and_time_treatment` for eggs). Images with no stage label — all of
+DLCPD-25 — are masked out of that head's loss.
+
 The mapping lives in
 [`src/cropguard/resources/dataset_maps/ap162.json`](../src/cropguard/resources/dataset_maps/ap162.json).
 All 162 classes are accounted for — **86 mapped onto 41 CropGuard pest classes,

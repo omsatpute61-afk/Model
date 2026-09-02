@@ -2,9 +2,10 @@
 
 One shared trunk, three heads:
 
-``label``     the fine-grained diagnosis (70-way in the bundled taxonomy)
-``category``  the coarse group - healthy / disease / pest / deficiency / abiotic
-``severity``  a 4-level ordinal estimate
+``label``       the fine-grained diagnosis (120-way in the bundled taxonomy)
+``category``    the coarse group - healthy / disease / pest / deficiency / abiotic
+``severity``    a 4-level ordinal estimate
+``life_stage``  egg / larva / nymph / adult, for pests
 
 Why not just the fine head? Because of what happens when it is wrong. A model
 that confuses *early blight* with *target spot* has still told the farmer
@@ -14,8 +15,14 @@ head is trained on an easier problem, is far more reliable, and lets the
 runtime fall back to category-level advice when the fine head is uncertain
 instead of abstaining completely.
 
-Severity is masked wherever the dataset has no severity label, so it costs
-nothing on datasets that lack it.
+The life-stage head exists because AP162 labels larva and adult as separate
+classes and the distinction changes the advice: adults on a pheromone trap mean
+"count nightly, do not spray yet", larvae in the whorl mean "treat the affected
+plants today". Merging the pair into one pest class keeps the training data
+together; the stage is recovered here instead.
+
+Severity and life stage are both masked wherever the dataset has no label, so
+they cost nothing on datasets that lack them - which is most of them.
 """
 
 from __future__ import annotations
@@ -27,7 +34,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..taxonomy import CATEGORIES, SEVERITY_LEVELS
+from ..taxonomy import CATEGORIES, LIFE_STAGES, SEVERITY_LEVELS
 from .backbones import build_backbone
 
 IGNORE_INDEX = -100
@@ -39,6 +46,7 @@ class ModelOutput(NamedTuple):
     label_logits: torch.Tensor
     category_logits: torch.Tensor
     severity_logits: torch.Tensor
+    life_stage_logits: torch.Tensor
     embedding: torch.Tensor
 
 
@@ -48,6 +56,7 @@ class ModelConfig:
     num_classes: int = 70
     num_categories: int = len(CATEGORIES)
     num_severity: int = len(SEVERITY_LEVELS)
+    num_life_stages: int = len(LIFE_STAGES)
     embedding_dim: int = 128
     dropout: float = 0.2
     pretrained: bool = True
@@ -85,8 +94,11 @@ class CropGuardNet(nn.Module):
         self.label_head = nn.Linear(cfg.embedding_dim, cfg.num_classes)
         self.category_head = nn.Linear(cfg.embedding_dim, cfg.num_categories)
         self.severity_head = nn.Linear(cfg.embedding_dim, cfg.num_severity)
+        self.life_stage_head = nn.Linear(cfg.embedding_dim, cfg.num_life_stages)
 
-        for head in (self.label_head, self.category_head, self.severity_head):
+        for head in (
+            self.label_head, self.category_head, self.severity_head, self.life_stage_head,
+        ):
             nn.init.zeros_(head.bias)
             nn.init.normal_(head.weight, std=0.01)
 
@@ -100,6 +112,7 @@ class CropGuardNet(nn.Module):
             label_logits=self.label_head(h),
             category_logits=self.category_head(h),
             severity_logits=self.severity_head(h),
+            life_stage_logits=self.life_stage_head(h),
             embedding=emb,
         )
 
@@ -112,6 +125,7 @@ class CropGuardNet(nn.Module):
             "label": F.softmax(out.label_logits / temperature, dim=1),
             "category": F.softmax(out.category_logits / temperature, dim=1),
             "severity": F.softmax(out.severity_logits, dim=1),
+            "life_stage": F.softmax(out.life_stage_logits, dim=1),
             "embedding": out.embedding,
         }
 
@@ -125,7 +139,10 @@ class CropGuardNet(nn.Module):
         trunk_params = [p for p in self.trunk.parameters() if p.requires_grad]
         head_params = [
             p
-            for m in (self.neck, self.label_head, self.category_head, self.severity_head)
+            for m in (
+                self.neck, self.label_head, self.category_head,
+                self.severity_head, self.life_stage_head,
+            )
             for p in m.parameters()
             if p.requires_grad
         ]
@@ -165,6 +182,7 @@ class ExportWrapper(nn.Module):
             F.softmax(out.label_logits / self.temperature, dim=1),
             F.softmax(out.category_logits / self.temperature, dim=1),
             F.softmax(out.severity_logits, dim=1),
+            F.softmax(out.life_stage_logits, dim=1),
             out.embedding,
         )
 
@@ -202,6 +220,7 @@ class MultiHeadLoss(nn.Module):
         label_weight: float = 1.0,
         category_weight: float = 0.3,
         severity_weight: float = 0.2,
+        life_stage_weight: float = 0.15,
         class_weights: torch.Tensor | None = None,
         label_smoothing: float = 0.05,
         use_focal: bool = False,
@@ -211,6 +230,7 @@ class MultiHeadLoss(nn.Module):
         self.label_weight = label_weight
         self.category_weight = category_weight
         self.severity_weight = severity_weight
+        self.life_stage_weight = life_stage_weight
         self.label_smoothing = label_smoothing
         self.use_focal = use_focal
         self.focal_gamma = focal_gamma
@@ -228,6 +248,7 @@ class MultiHeadLoss(nn.Module):
         label: torch.Tensor,
         category: torch.Tensor,
         severity: torch.Tensor,
+        life_stage: torch.Tensor | None = None,
         soft_label: torch.Tensor | None = None,
         valid: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, dict[str, float]]:
@@ -237,13 +258,19 @@ class MultiHeadLoss(nn.Module):
             keep = valid.bool()
             if not keep.any():  # whole batch failed to decode - skip it
                 zero = out.label_logits.sum() * 0.0
-                return zero, {"label": 0.0, "category": 0.0, "severity": 0.0, "total": 0.0}
+                return zero, {
+                    "label": 0.0, "category": 0.0, "severity": 0.0,
+                    "life_stage": 0.0, "total": 0.0,
+                }
             if not keep.all():
                 out = ModelOutput(
                     out.label_logits[keep], out.category_logits[keep],
-                    out.severity_logits[keep], out.embedding[keep],
+                    out.severity_logits[keep], out.life_stage_logits[keep],
+                    out.embedding[keep],
                 )
                 label, category, severity = label[keep], category[keep], severity[keep]
+                if life_stage is not None:
+                    life_stage = life_stage[keep]
                 if soft_label is not None:
                     soft_label = soft_label[keep]
 
@@ -271,10 +298,25 @@ class MultiHeadLoss(nn.Module):
             sev_loss = out.severity_logits.sum() * 0.0
         parts["severity"] = float(sev_loss.detach())
 
+        # Life stage is labelled only for pest images that came from a dataset
+        # which records it (AP162 does; DLCPD-25 does not). Everything else is
+        # masked rather than pushed towards a made-up "unknown" class.
+        if life_stage is not None:
+            stage_mask = life_stage != IGNORE_INDEX
+            stage_loss = (
+                F.cross_entropy(out.life_stage_logits[stage_mask], life_stage[stage_mask])
+                if stage_mask.any()
+                else out.life_stage_logits.sum() * 0.0
+            )
+        else:
+            stage_loss = out.life_stage_logits.sum() * 0.0
+        parts["life_stage"] = float(stage_loss.detach())
+
         total = (
             self.label_weight * label_loss
             + self.category_weight * cat_loss
             + self.severity_weight * sev_loss
+            + self.life_stage_weight * stage_loss
         )
         parts["total"] = float(total.detach())
         return total, parts

@@ -115,3 +115,52 @@ def test_mahalanobis_round_trips(tmp_path):
     assert reloaded.class_ids == ["a", "b", "c"]
     assert reloaded.threshold == pytest.approx(det.threshold)
     assert np.abs(reloaded.score(emb) - det.score(emb)).max() < 1e-3
+
+
+# --------------------------------------------------------------- life stage
+def test_life_stage_changes_the_recommended_action():
+    """The whole reason the model carries a life-stage head.
+
+    Species says what the problem is; stage says whether today is the day to
+    spend money on it. Spraying because moths appeared on a trap wastes the
+    application and selects for resistance.
+    """
+    from cropguard.advisory import default_engine
+
+    engine = default_engine()
+    adult = engine.advise("pest__fall_armyworm", confidence=0.92, life_stage="adult")
+    larva = engine.advise("pest__fall_armyworm", confidence=0.92, life_stage="larva")
+
+    assert adult.action == "monitor_and_count"
+    assert larva.action == "treat_affected_plants"
+    assert adult.urgency_rank < larva.urgency_rank
+    assert any("trap threshold" in n for n in adult.notes)
+    assert any("feeding stage" in n for n in larva.notes)
+
+
+def test_egg_stage_advises_timing_not_spraying_now():
+    from cropguard.advisory import default_engine
+
+    egg = default_engine().advise("pest__american_bollworm", confidence=0.9, life_stage="egg")
+    assert egg.action == "scout_and_time_treatment"
+    assert any("hatch" in n.lower() for n in egg.notes)
+
+
+def test_life_stage_is_ignored_for_non_pest_classes():
+    """A life stage on a leaf-spot image is meaningless and must not be recorded."""
+    from cropguard.advisory import default_engine
+
+    engine = default_engine()
+    with_stage = engine.advise("tomato__late_blight", confidence=0.9, life_stage="adult")
+    without = engine.advise("tomato__late_blight", confidence=0.9)
+    assert with_stage.life_stage is None
+    assert with_stage.urgency == without.urgency
+    assert with_stage.action == without.action
+
+
+def test_unknown_is_never_predicted_as_a_life_stage():
+    """Index 0 is the absence of a label, not a fifth stage the model may pick."""
+    from cropguard.taxonomy import LIFE_STAGES
+
+    assert LIFE_STAGES[0] == "unknown"
+    assert set(LIFE_STAGES[1:]) == {"egg", "larva", "nymph", "adult"}
