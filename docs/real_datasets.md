@@ -19,8 +19,24 @@ python scripts/prepare_real_dataset.py \
     --out artifacts/data/real --min-per-class 40 --workers 8
 ```
 
-Both are on Kaggle, so download them with the Kaggle CLI or the website; they
-cannot be fetched from inside a sandboxed session.
+Both are on Kaggle. The prepare script can fetch them for you:
+
+```bash
+pip install kagglehub
+python scripts/prepare_real_dataset.py --kaggle-disease --kaggle-pest \
+    --out artifacts/data/real --min-per-class 40 --workers 8
+```
+
+**This will not work inside a sandboxed Claude Code session.** Those
+environments run behind an egress proxy that typically allows package
+registries only, and `api.kaggle.com` is refused with a 403 at the gateway, so
+`kagglehub` cannot even resolve the dataset metadata. Run it on a machine with
+ordinary internet access.
+
+That is the right place for it anyway: ~100k images is many gigabytes, a
+sandbox has a fixed per-session disk allowance, and training on this much data
+at 224 px needs a GPU. A laptop, a workstation, Colab or a Kaggle notebook are
+all better hosts for the actual run.
 
 ### Each source declares what it may contribute
 

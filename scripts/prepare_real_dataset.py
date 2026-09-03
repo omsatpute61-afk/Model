@@ -71,7 +71,41 @@ DEFAULT_CROPS = (
     "tomato", "chilli", "mango", "citrus", "grape",
 )
 
+#: Kaggle slugs for the corpora this model currently targets.
+DEFAULT_KAGGLE_DISEASE = "salmasyed1360/plant-diseases-100k-labelled-images"
+DEFAULT_KAGGLE_PEST = "shruthisindhura/pestopia"
+
 RULE = "=" * 78
+
+
+def kaggle_download(slug: str) -> str:
+    """Fetch a Kaggle dataset with kagglehub and return the unpacked path.
+
+    Fails with an actionable message rather than a stack trace, because the
+    two things that go wrong here are both fixable by the caller: kagglehub not
+    installed, and no network route to Kaggle (a sandboxed session whose egress
+    policy allows package registries only will get a 403 from the proxy).
+    """
+    try:
+        import kagglehub
+    except ImportError as exc:  # pragma: no cover - depends on the environment
+        raise SystemExit(
+            "kagglehub is not installed. Run:  pip install kagglehub\n"
+            "Or download the dataset yourself and pass --disease/--pest instead."
+        ) from exc
+
+    LOGGER.info("downloading %s from Kaggle (this can take a while)", slug)
+    try:
+        return kagglehub.dataset_download(slug)
+    except Exception as exc:  # noqa: BLE001 - surface the cause, not a traceback
+        raise SystemExit(
+            f"could not download {slug!r} from Kaggle: {type(exc).__name__}: {exc}\n\n"
+            "If this is a proxy/403 error, this machine has no route to Kaggle. "
+            "Download the dataset on a machine that does, then pass the unpacked "
+            "path with --disease / --pest.\n"
+            "If this is an authentication error, set KAGGLE_USERNAME and KAGGLE_KEY, "
+            "or place kaggle.json in ~/.kaggle/."
+        ) from exc
 
 
 def banner(text: str) -> None:
@@ -84,6 +118,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--disease", help="disease corpus root, e.g. Plant-Diseases-100k-Labelled-Images")
     p.add_argument("--pest", help="pest corpus root, e.g. Pestopia")
+    p.add_argument("--kaggle-disease", nargs="?", const=DEFAULT_KAGGLE_DISEASE,
+                   help="download the disease corpus from Kaggle via kagglehub "
+                        f"(default slug: {DEFAULT_KAGGLE_DISEASE})")
+    p.add_argument("--kaggle-pest", nargs="?", const=DEFAULT_KAGGLE_PEST,
+                   help="download the pest corpus from Kaggle via kagglehub "
+                        f"(default slug: {DEFAULT_KAGGLE_PEST})")
     p.add_argument("--dlcpd", help="unpacked DLCPD-25 root (Crop/Class/*.jpg)")
     p.add_argument("--ap162", help="unpacked AP162 root")
     p.add_argument("--ap162-classes", help="AP162 classes.txt (index<TAB>name)")
@@ -114,8 +154,18 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=getattr(logging, args.log_level.upper(), logging.INFO),
                         format="%(levelname)-7s %(name)s | %(message)s")
 
+    if args.kaggle_disease:
+        args.disease = kaggle_download(args.kaggle_disease)
+        print(f"disease corpus downloaded to {args.disease}")
+    if args.kaggle_pest:
+        args.pest = kaggle_download(args.kaggle_pest)
+        print(f"pest corpus downloaded to {args.pest}")
+
     if not (args.disease or args.pest or args.dlcpd or args.ap162 or args.extra_source):
-        p.error("give at least one of --disease, --pest, --dlcpd, --ap162 or --extra-source")
+        p.error(
+            "give at least one source: --disease/--pest (local paths), "
+            "--kaggle-disease/--kaggle-pest (download), --dlcpd, --ap162 or --extra-source"
+        )
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)

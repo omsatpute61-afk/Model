@@ -1,0 +1,103 @@
+# Training configuration for Plant-Diseases-100k-Labelled-Images + Pestopia.
+#
+#   python scripts/prepare_real_dataset.py \
+#       --disease /data/Plant-Diseases-100k-Labelled-Images \
+#       --pest    /data/Pestopia \
+#       --out artifacts/data/real --min-per-class 40 --workers 8
+#
+#   python -m cropguard.train --config configs/real_data.yaml
+#
+# Read artifacts/data/real/eda.md FIRST. Its recommendations are written to be
+# acted on, and several settings below are deliberate guesses that the EDA will
+# either confirm or correct - each is flagged with "CHECK EDA".
+
+run_name: cropguard-real
+output_dir: artifacts/runs
+seed: 1337
+deterministic: false
+
+data:
+  manifest: artifacts/data/real/manifest.csv
+  # Only the classes actually present, written by prepare_real_dataset.py.
+  # Training a 120-way head when the data holds 40 classes wastes capacity and
+  # invents confusions that cannot occur.
+  taxonomy: artifacts/data/real/taxonomy.json
+
+  # CHECK EDA: if "share under 224 px" is high, drop to 160 or 192. Upscaling
+  # a 128 px thumbnail to 224 invents detail that is not in the file.
+  image_size: 224
+
+  batch_size: 64          # 32 or 16 on CPU / a small GPU
+  num_workers: 8
+
+  # ~100k disease images against a much smaller pest set, and both are
+  # long-tailed internally. Without this the model learns to answer with the
+  # head classes and scores well while missing the rare pest that matters.
+  balanced_sampling: true
+
+  # Both corpora are collected/curated rather than shot in a standing crop.
+  # CHECK EDA: if it reports a single distinct resolution, the corpus is
+  # studio-processed and this must stay at 1.0 - shadow, glare, motion blur,
+  # canopy occlusion and phone JPEG are exactly what the model will meet in a
+  # field and never saw in training.
+  aug_strength: 1.0
+
+model:
+  backbone: mobilenet_v3_small   # ~1.1M params; the Raspberry-Pi default
+  # Worth double digits of accuracy on real photographs. Only set false if the
+  # training machine cannot reach download.pytorch.org - and then expect to need
+  # far more epochs, because the frozen warm-start is disabled automatically.
+  pretrained: true
+  dropout: 0.2
+  embedding_dim: 128
+
+optim:
+  epochs: 30
+  lr: 0.0003
+  backbone_lr_scale: 0.1     # protect pretrained features from the head's LR
+  weight_decay: 0.0001
+  warmup_epochs: 2
+  min_lr_scale: 0.02
+  grad_clip: 1.0
+  label_smoothing: 0.05
+
+  # CHECK EDA: turn on when the imbalance ratio exceeds ~20:1. Balanced
+  # sampling alone handles moderate skew; focal loss keeps the tail classes
+  # driving gradients once the head classes are easy.
+  use_focal: false
+  focal_gamma: 2.0
+
+  category_weight: 0.3       # the fallback when the fine head is unsure
+  life_stage_weight: 0.15    # masked wherever unlabelled - see below
+
+  # Neither corpus labels severity, so this head is masked on every image and
+  # contributes exactly nothing. Left at 0 as documentation of that fact rather
+  # than as a tuning choice; raise it only once severity labels exist.
+  severity_weight: 0.0
+
+  # Pestopia folder names ("aphids", "stem borer") do not distinguish larva
+  # from adult, so the life-stage head will likely train on little or nothing
+  # and be masked. CHECK EDA "life_stage labelled_fraction". It costs nothing
+  # when unlabelled; AP162 (--ap162) is where this head gets real signal.
+
+  mixup_alpha: 0.0           # try 0.2 if the tail classes overfit
+  ema_decay: 0.999           # automatically capped to the run length
+  use_ema: true
+  freeze_epochs: 1           # head-only warm start (auto-disabled if not pretrained)
+  unfreeze_blocks: 0
+  early_stopping_patience: 8
+  amp: true                  # GPU only; ignored on CPU
+
+policy:
+  # At most 10% of the answers we actually give may be wrong, and we must still
+  # answer at least half the photos. Tighten max_selective_error for a district
+  # that cannot afford wrong spray advice - it is a business decision, and it
+  # can be retuned later without retraining:
+  #   python -m cropguard.evaluate --run ... --recalibrate --update-card \
+  #       --max-selective-error 0.05
+  max_selective_error: 0.10
+  min_coverage: 0.50
+  min_threshold: 0.30        # floor that preserves out-of-distribution rejection
+  calibrate: true
+  fit_ood: true
+  ood_percentile: 97.5
