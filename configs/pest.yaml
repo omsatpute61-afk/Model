@@ -1,0 +1,91 @@
+# Pest-only model: Pestopia (Indian pests), trained on a Colab GPU.
+#
+#   python scripts/prepare_real_dataset.py --kaggle-pest \
+#       --out artifacts/data/pest --min-per-class 40
+#   python -m cropguard.train --config configs/pest.yaml
+#
+# Settings marked "CHECK EDA" depend on what the data turns out to look like.
+# artifacts/data/pest/eda.md answers each of them - read it before a long run.
+
+run_name: cropguard-pest
+output_dir: artifacts/runs
+seed: 1337
+
+data:
+  manifest: artifacts/data/pest/manifest.csv
+  # Only the pest classes actually present. Training a 120-way head when the
+  # data holds 20 classes wastes capacity and invents impossible confusions.
+  taxonomy: artifacts/data/pest/taxonomy.json
+
+  # CHECK EDA "share under 224 px". If most images are smaller, drop to 160 or
+  # 192 - upscaling a thumbnail invents detail that is not in the file.
+  image_size: 224
+
+  batch_size: 64          # fits a T4; drop to 32 if you hit OOM
+  num_workers: 2          # Colab gives 2 vCPU; more threads just thrash
+
+  # Pest archives are reliably long-tailed - a few common pests dominate and
+  # the ones that matter most are rare. Without this the model answers with the
+  # head classes and scores well while missing outbreaks.
+  balanced_sampling: true
+
+  # An insect photographed on a phone in a field is shadowed, motion-blurred
+  # and JPEG-crushed. CHECK EDA: if it reports a single distinct resolution the
+  # corpus is studio-processed and this must stay at 1.0.
+  aug_strength: 1.0
+
+model:
+  backbone: mobilenet_v3_small   # edge target: ~1.1M params, ~1.4MB after INT8
+  # If macro F1 falls short and the device budget allows it, efficientnet_b0
+  # is the next step up - re-run cropguard.benchmark on the real board first.
+  pretrained: true               # worth double digits; Colab can reach the weights
+  dropout: 0.2
+  embedding_dim: 128
+
+optim:
+  epochs: 30
+  lr: 0.0003
+  backbone_lr_scale: 0.1     # protect ImageNet features from the head's LR
+  weight_decay: 0.0001
+  warmup_epochs: 2
+  grad_clip: 1.0
+  label_smoothing: 0.05
+
+  # On by default here, unlike the general config: balanced sampling fixes how
+  # often a rare pest is *seen*, focal loss keeps it producing gradient once the
+  # common ones are easy. Turn off if the EDA shows a mild tail (< ~10:1).
+  use_focal: true
+  focal_gamma: 2.0
+
+  # Every class in a pest-only run is a pest, so the coarse head has little to
+  # separate beyond pest vs background. Kept low rather than removed - it is
+  # still the fallback that lets the device say "this is a pest problem" when
+  # the fine head is unsure.
+  category_weight: 0.15
+
+  # Pestopia folder names ("aphids", "stem borer") do not distinguish larva
+  # from adult, so this head will be masked on most or all images and cost
+  # nothing. CHECK EDA "life_stage labelled_fraction"; AP162 is where it gets
+  # real signal.
+  life_stage_weight: 0.15
+
+  # Pestopia does not label severity. Masked automatically; 0 records the fact.
+  severity_weight: 0.0
+
+  mixup_alpha: 0.0           # try 0.2 if the tail classes overfit
+  ema_decay: 0.999           # capped to the run length automatically
+  use_ema: true
+  freeze_epochs: 1           # head-only warm start over pretrained features
+  early_stopping_patience: 8
+  amp: true                  # mixed precision on the GPU
+
+policy:
+  # At most 10% of the answers we give may be wrong, and we must still answer
+  # half the photos. Tighten max_selective_error where a wrong spray
+  # recommendation is expensive - retunable later without retraining.
+  max_selective_error: 0.10
+  min_coverage: 0.50
+  min_threshold: 0.30        # floor preserving out-of-distribution rejection
+  calibrate: true
+  fit_ood: true
+  ood_percentile: 97.5

@@ -215,6 +215,34 @@ def _looks_like_split(name: str) -> bool:
     return name.strip().lower() in SPLIT_DIR_NAMES
 
 
+def find_dataset_root(path: str | Path, max_depth: int = 4) -> Path:
+    """Descend through wrapper directories to the level holding the classes.
+
+    Archive downloads rarely put the class folders at the top. kagglehub hands
+    back ``.../datasets/<owner>/<name>/versions/1/`` which usually contains a
+    single folder named after the dataset, and only inside that are the
+    classes. Passing the outer path to a scanner reads the wrapper as one class
+    directory and silently produces a one-class dataset that trains to 100%
+    accuracy and means nothing.
+
+    Stops as soon as a directory holds images directly, or more than one
+    subdirectory (several subdirectories are the classes, or a train/test
+    split, and both are handled downstream).
+    """
+    root = Path(path)
+    for _ in range(max_depth):
+        if not root.is_dir():
+            break
+        children = [d for d in root.iterdir() if d.is_dir() and not d.name.startswith(".")]
+        has_images = any(
+            f.is_file() and f.suffix.lower() in IMAGE_SUFFIXES for f in root.iterdir()
+        )
+        if has_images or len(children) != 1:
+            break
+        root = children[0]
+    return root
+
+
 def detect_layout(root: Path, max_probe: int = 40) -> str:
     """Return ``"flat"``, ``"nested"`` or ``"split"`` for an unpacked dataset.
 
@@ -588,6 +616,7 @@ def _ap162_index(folder: str, by_name: dict[str, int]) -> int | None:
 
 __all__ = [
     "IngestReport",
+    "find_dataset_root",
     "SOURCE_KINDS",
     "scan_flat",
     "scan_nested",

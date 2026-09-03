@@ -50,6 +50,7 @@ from cropguard.data.clean import (  # noqa: E402
 )
 from cropguard.data.ingest import (  # noqa: E402
     detect_layout,
+    find_dataset_root,
     scan_ap162,
     scan_flat,
     scan_nested,
@@ -181,7 +182,10 @@ def main(argv: list[str] | None = None) -> int:
 
     def ingest_source(path: str, name: str, kind: str) -> None:
         """Read one corpus with its kind enforced, whatever its layout."""
-        root = Path(path)
+        given = Path(path)
+        root = find_dataset_root(given)
+        if root != given:
+            LOGGER.info("%s: descended to the class level at %s", name, root)
         layout = detect_layout(root)
         LOGGER.info("%s layout detected as %r, kind=%s", name, layout, kind)
         if layout == "nested":
@@ -199,7 +203,7 @@ def main(argv: list[str] | None = None) -> int:
         ingest_source(args.pest, "Pestopia", pest_kind)
 
     if args.dlcpd:
-        root = Path(args.dlcpd)
+        root = find_dataset_root(args.dlcpd)
         layout = detect_layout(root)
         LOGGER.info("DLCPD-25 layout detected as %r", layout)
         if layout == "nested":
@@ -214,12 +218,13 @@ def main(argv: list[str] | None = None) -> int:
         records.extend(rep.records)
 
     if args.ap162:
-        rep = scan_ap162(Path(args.ap162), taxonomy, classes_file=args.ap162_classes)
+        rep = scan_ap162(find_dataset_root(args.ap162), taxonomy, classes_file=args.ap162_classes)
         print(rep.format())
         reports["AP162"] = rep.summary()
         records.extend(rep.records)
 
     for src in args.extra_source:
+        src = str(find_dataset_root(src))
         recs, unmapped = scan_image_folder(src, taxonomy, source=Path(src).name)
         print(f"{src}: {len(recs)} images, {len(unmapped)} unmapped folders")
         if unmapped:
