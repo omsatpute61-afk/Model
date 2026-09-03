@@ -41,6 +41,41 @@ DATASET_MAP_DIR = RESOURCE_DIR / "dataset_maps"
 #: Folder-name fragments that mean "this level is a split, not a class".
 SPLIT_DIR_NAMES = {"train", "training", "val", "valid", "validation", "test", "testing", "images"}
 
+#: What a source is allowed to contribute. A pest dataset that ships fungal
+#: classes is not a curiosity to tolerate - see :func:`check_source_kind`.
+SOURCE_KINDS = ("pest", "disease", "mixed")
+
+#: Category a source of each kind may legitimately produce.
+_ALLOWED_CATEGORIES = {
+    # "healthy" is a legitimate negative class for a pest source, so it is
+    # allowed; what must not come from a pest dataset is a plant *condition*.
+    "pest": {"pest", "healthy", "background"},
+    "disease": {"disease", "deficiency", "abiotic", "healthy", "background"},
+    "mixed": {"pest", "disease", "deficiency", "abiotic", "healthy", "background"},
+}
+
+#: Words that mark a folder name as a plant *condition* rather than an insect.
+#: Used on folders that do not resolve to any taxonomy class, so a fungal class
+#: in a pest dataset is still caught even when we have never heard of it.
+DISEASE_NAME_HINTS = (
+    "blight", "rust", "mildew", "mould", "mold", "rot", "wilt", "smut", "scab",
+    "anthracnose", "canker", "blast", "spot", "spots", "curl", "mosaic",
+    "chlorosis", "necrosis", "lesion", "fungus", "fungal", "bacterial",
+    "virus", "viral", "phytophthora", "fusarium", "alternaria", "cercospora",
+    "colletotrichum", "septoria", "puccinia", "erysiphe", "oidium", "downy",
+    "powdery", "damping", "gall", "scorch", "yellowing", "dieback", "die_back",
+    "deficiency",
+)
+
+#: Words that mark a folder name as an arthropod / animal pest.
+PEST_NAME_HINTS = (
+    "aphid", "beetle", "borer", "bug", "caterpillar", "cricket", "cutworm",
+    "fly", "grub", "hopper", "larva", "larvae", "locust", "maggot", "mite",
+    "moth", "nymph", "pest", "scale", "slug", "snail", "termite", "thrip",
+    "weevil", "whitefly", "worm", "armyworm", "bollworm", "mealybug",
+    "grasshopper", "sawfly", "wasp", "ant", "earwig", "insect", "spider",
+)
+
 _LIFE_STAGE_TOKENS = (
     ("larva", "larva"), ("larvae", "larva"), ("caterpillar", "larva"), ("grub", "larva"),
     ("nymph", "nymph"), ("egg", "egg"), ("adult", "adult"), ("imago", "adult"),
@@ -56,6 +91,10 @@ class IngestReport:
     unmapped: dict[str, int] = field(default_factory=dict)
     excluded: dict[str, int] = field(default_factory=dict)
     empty_dirs: list[str] = field(default_factory=list)
+    #: Folders rejected because their content does not belong in this source,
+    #: e.g. a fungal disease class inside a pest dataset. Maps folder -> reason.
+    wrong_kind: dict[str, str] = field(default_factory=dict)
+    wrong_kind_images: dict[str, int] = field(default_factory=dict)
 
     @property
     def image_count(self) -> int:
@@ -74,6 +113,9 @@ class IngestReport:
             "unmapped_images": sum(self.unmapped.values()),
             "excluded_folders": len(self.excluded),
             "excluded_images": sum(self.excluded.values()),
+            "wrong_kind_folders": len(self.wrong_kind),
+            "wrong_kind_images": sum(self.wrong_kind_images.values()),
+            "wrong_kind_detail": dict(self.wrong_kind),
             "empty_dirs": len(self.empty_dirs),
             "per_class": dict(Counter(r.class_id for r in self.records)),
         }
@@ -82,6 +124,17 @@ class IngestReport:
         lines = [
             f"{self.source}: {self.image_count} images in {self.class_count} classes",
         ]
+        if self.wrong_kind:
+            lines.append(
+                f"  REJECTED - wrong kind for this source: "
+                f"{sum(self.wrong_kind_images.values())} images in "
+                f"{len(self.wrong_kind)} folder(s):"
+            )
+            for name, reason in sorted(
+                self.wrong_kind.items(), key=lambda kv: -self.wrong_kind_images.get(kv[0], 0)
+            )[:top_unmapped]:
+                n = self.wrong_kind_images.get(name, 0)
+                lines.append(f"    {n:>7}  {name}  ({reason})")
         if self.excluded:
             lines.append(
                 f"  deliberately excluded: {sum(self.excluded.values())} images "
@@ -97,6 +150,61 @@ class IngestReport:
             if len(self.unmapped) > top_unmapped:
                 lines.append(f"    ... and {len(self.unmapped) - top_unmapped} more")
         return "\n".join(lines)
+
+
+def _hint_matches(hints: tuple[str, ...], words: set[str]) -> bool:
+    """Match a hint as a whole word, or inside one when it is long enough.
+
+    Naive substring matching is a trap here and it bit this function during
+    development: the pest hint "ant" appears inside "anthracnose", so a fungal
+    class was classified as an insect and would have been let straight into the
+    pest dataset. Short hints therefore match whole words only; hints of four
+    characters or more may also match inside a word, which is what catches
+    plurals and compounds ("aphids", "leafspot", "earlyblight").
+    """
+    for hint in hints:
+        if hint in words:
+            return True
+        if len(hint) >= 4 and any(hint in word for word in words):
+            return True
+    return False
+
+
+def looks_like_disease(name: str) -> bool:
+    """True when a folder name describes a plant condition, not an insect.
+
+    Deliberately keyword-based rather than taxonomy-based: the point is to
+    catch classes we have *never seen*, which is exactly the case a hard-coded
+    list of known diseases would miss.
+    """
+    words = set(normalise_alias(name).split())
+    if _hint_matches(PEST_NAME_HINTS, words):
+        # "leaf miner" and "leaf spot" both contain "leaf"; an explicit insect
+        # word wins, because insects are what a pest source is for.
+        return False
+    return _hint_matches(DISEASE_NAME_HINTS, words)
+
+
+def check_source_kind(
+    crop_class, source_kind: str, folder: str
+) -> str | None:
+    """Return a rejection reason if this class does not belong in this source.
+
+    A pest dataset carrying fungal classes is a real problem, not a quirk to
+    tolerate. Training on them would put the same condition on both branches of
+    the model with labels from two different sources, corrupt the pest branch's
+    life-stage and economic-threshold logic (a fungus has neither), and compete
+    with a disease corpus that is far better at diseases anyway.
+    """
+    allowed = _ALLOWED_CATEGORIES.get(source_kind)
+    if allowed is None or crop_class is None:
+        return None
+    if crop_class.category in allowed:
+        return None
+    return (
+        f"{crop_class.category} class in a {source_kind} source "
+        f"(resolved to {crop_class.id})"
+    )
 
 
 def _images_in(directory: Path) -> list[Path]:
@@ -155,6 +263,7 @@ def scan_nested(
     source: str = "",
     group_key: Callable[[Path], str] | None = None,
     crops: Sequence[str] | None = None,
+    source_kind: str = "mixed",
 ) -> IngestReport:
     """Read ``root/<Crop>/<Class>/*.jpg`` (DLCPD-25 shape).
 
@@ -193,7 +302,19 @@ def scan_nested(
             label = class_dir.name if class_dir != crop_dir else crop_name
             crop_class = _resolve_nested(tax, crop_name, label)
             if crop_class is None:
-                report.unmapped[f"{crop_name}/{label}"] = len(images)
+                if source_kind == "pest" and looks_like_disease(label):
+                    report.wrong_kind[f"{crop_name}/{label}"] = (
+                        "folder name describes a plant disease, not an insect"
+                    )
+                    report.wrong_kind_images[f"{crop_name}/{label}"] = len(images)
+                else:
+                    report.unmapped[f"{crop_name}/{label}"] = len(images)
+                continue
+
+            reason = check_source_kind(crop_class, source_kind, label)
+            if reason is not None:
+                report.wrong_kind[f"{crop_name}/{label}"] = reason
+                report.wrong_kind_images[f"{crop_name}/{label}"] = len(images)
                 continue
 
             for img in images:
@@ -278,6 +399,78 @@ def _strip_crop_prefix(label: str, *crops: str) -> str:
         if n and words[:n] == crop_words and len(words) > n:
             words = words[n:]
     return " ".join(words)
+
+
+def scan_flat(
+    root: str | Path,
+    taxonomy: Taxonomy | None = None,
+    source: str = "",
+    source_kind: str = "mixed",
+    group_key: Callable[[Path], str] | None = None,
+    crops: Sequence[str] | None = None,
+) -> IngestReport:
+    """Read ``root/<Class>/*.jpg``, enforcing what this source may contribute.
+
+    Used for both Plant-Diseases-100k (a disease source) and Pestopia (a pest
+    source). ``source_kind`` is not advisory: a class whose category does not
+    belong in this source is rejected and reported, never trained on.
+    """
+    tax = taxonomy or load_taxonomy()
+    keyer = group_key or default_group_key
+    root = Path(root)
+    if not root.is_dir():
+        raise NotADirectoryError(f"{root} is not a directory")
+    if source_kind not in SOURCE_KINDS:
+        raise ValueError(f"source_kind must be one of {SOURCE_KINDS}, got {source_kind!r}")
+
+    report = IngestReport(source=source or root.name)
+    wanted = {c.lower() for c in crops} if crops else None
+
+    for class_dir in _class_dirs(root):
+        images = _images_in(class_dir)
+        if not images:
+            report.empty_dirs.append(class_dir.name)
+            continue
+
+        crop_class = tax.resolve(class_dir.name)
+
+        if crop_class is None:
+            # Unknown to the taxonomy. Still check its shape, so a fungal class
+            # we have never heard of is caught rather than filed as a generic
+            # "unmapped" line that a reader skims past.
+            if source_kind == "pest" and looks_like_disease(class_dir.name):
+                report.wrong_kind[class_dir.name] = (
+                    "folder name describes a plant disease, not an insect"
+                )
+                report.wrong_kind_images[class_dir.name] = len(images)
+            else:
+                report.unmapped[class_dir.name] = len(images)
+            continue
+
+        reason = check_source_kind(crop_class, source_kind, class_dir.name)
+        if reason is not None:
+            report.wrong_kind[class_dir.name] = reason
+            report.wrong_kind_images[class_dir.name] = len(images)
+            continue
+
+        if wanted is not None and crop_class.crop not in ("any",) and crop_class.crop.lower() not in wanted:
+            report.excluded[class_dir.name] = len(images)
+            continue
+
+        stage = parse_life_stage(class_dir.name)
+        for img in images:
+            report.records.append(
+                Record(
+                    path=str(img),
+                    class_id=crop_class.id,
+                    category=crop_class.category,
+                    severity="unknown",
+                    life_stage=stage,
+                    group=keyer(img),
+                    source=report.source,
+                )
+            )
+    return report
 
 
 # ---------------------------------------------------------------------------
@@ -395,7 +588,11 @@ def _ap162_index(folder: str, by_name: dict[str, int]) -> int | None:
 
 __all__ = [
     "IngestReport",
+    "SOURCE_KINDS",
+    "scan_flat",
     "scan_nested",
+    "looks_like_disease",
+    "check_source_kind",
     "scan_ap162",
     "detect_layout",
     "load_dataset_map",

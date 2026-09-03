@@ -1,9 +1,67 @@
-# Training on DLCPD-25 and AP162
+# Training on real data
 
-The two real corpora this model is built for, how to get them, and what to
-watch out for in each.
+The corpora this model is built for, how to get them, and what to watch out for
+in each.
 
-## The datasets
+## Current datasets
+
+| | Plant-Diseases-100k-Labelled-Images | Pestopia |
+|---|---|---|
+| Purpose | crop disease + healthy | Indian insect pests (with pesticide mapping) |
+| Scale | ~100,000 labelled images | Indian pest classes |
+| Source | [Kaggle: salmasyed1360](https://www.kaggle.com/datasets/salmasyed1360/plant-diseases-100k-labelled-images) | [Kaggle: shruthisindhura](https://www.kaggle.com/datasets/shruthisindhura/pestopia) |
+| Declared as | `--disease` (kind `disease`) | `--pest` (kind `pest`) |
+
+```bash
+python scripts/prepare_real_dataset.py \
+    --disease /data/Plant-Diseases-100k-Labelled-Images \
+    --pest    /data/Pestopia \
+    --out artifacts/data/real --min-per-class 40 --workers 8
+```
+
+Both are on Kaggle, so download them with the Kaggle CLI or the website; they
+cannot be fetched from inside a sandboxed session.
+
+### Each source declares what it may contribute
+
+This is the single most important rule in the ingest, and it is enforced rather
+than documented:
+
+* a **pest** source may produce pest, healthy and background classes;
+* a **disease** source may produce disease, deficiency, abiotic, healthy and
+  background classes;
+* anything else is **rejected and listed**, never trained on.
+
+**Pest datasets routinely ship fungal and bacterial classes.** Letting them into
+the pest branch is not a harmless surplus:
+
+1. the same condition ends up on **both branches** of the model, labelled from
+   two different sources that will not agree;
+2. it corrupts the pest branch's logic — the life-stage head and the economic
+   threshold are meaningless for a fungus, which has neither larvae nor a
+   larvae-per-plant count;
+3. it competes with a disease corpus of ~100k images that is far better at
+   diseases anyway.
+
+Two mechanisms catch them, and both are needed:
+
+| Mechanism | Catches | Example |
+|---|---|---|
+| **Category gate** | classes that resolve in the taxonomy but to the wrong category | `Tomato___Late_blight` → *disease class in a pest source* |
+| **Name heuristic** | classes the taxonomy has never heard of | `Fungal Leaf Spot` → *describes a plant disease, not an insect* |
+
+The heuristic is what makes this robust: a hard-coded list of known diseases
+would, by definition, miss the unknown ones. It matches whole words (and long
+hints inside words), because naive substring matching classified *anthracnose*
+as an insect — the pest hint `ant` sits inside it.
+
+Override with `--allow-disease-in-pest-source` if you ever genuinely want the
+mixed behaviour. Rejections always appear in the run summary and in
+`ingest_report.json` under `wrong_kind_detail`, so nothing disappears quietly.
+
+## Previously supported corpora
+
+Still supported via `--dlcpd` and `--ap162`.
 
 | | DLCPD-25 | AP162 |
 |---|---|---|

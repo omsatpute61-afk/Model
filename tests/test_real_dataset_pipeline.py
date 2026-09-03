@@ -21,6 +21,7 @@ from cropguard.data.clean import (
 from cropguard.data.eda import analyse, gini
 from cropguard.data.ingest import (
     detect_layout,
+    scan_flat,
     load_dataset_map,
     parse_life_stage,
     scan_ap162,
@@ -297,3 +298,126 @@ def test_eda_report_renders(tmp_path):
     assert "# Dataset EDA" in text
     assert "Class balance" in text
     assert paths["json"].exists()
+
+
+# ------------------------------------------------- source-kind enforcement
+@pytest.fixture
+def pestopia(tmp_path):
+    """A pest corpus with fungal and bacterial classes mixed in, as scraped
+    pest datasets routinely are."""
+    root = tmp_path / "Pestopia"
+    pests = ["aphids", "armyworm", "Pink Bollworm", "stem borer", "thrips",
+             "whitefly", "mites", "grasshopper", "mealybug", "termites"]
+    diseases = ["Anthracnose", "Leaf Blight", "Powdery Mildew", "Fusarium Wilt",
+                "Bacterial Leaf Spot", "Root Rot", "Tomato___Late_blight",
+                "Downy Mildew", "Fungal Leaf Spot"]
+    for i, cls in enumerate(pests + diseases):
+        for k in range(3):
+            _img(root / cls / f"{k}.jpg", seed=i * 10 + k)
+    return root, pests, diseases
+
+
+def test_pest_source_rejects_every_disease_class(pestopia):
+    """A fungal class in a pest dataset is not a quirk to tolerate.
+
+    Training on it puts the same condition on both branches of the model with
+    labels from two different sources, and corrupts the pest branch's
+    life-stage and economic-threshold logic - a fungus has neither.
+    """
+    root, pests, diseases = pestopia
+    report = scan_flat(root, source="Pestopia", source_kind="pest")
+
+    assert {r.category for r in report.records} == {"pest"}
+    assert len(report.wrong_kind) == len(diseases)
+    for cls in diseases:
+        assert cls in report.wrong_kind, f"{cls} was not rejected"
+    for cls in pests:
+        assert cls not in report.wrong_kind
+
+
+def test_every_rejection_states_a_reason(pestopia):
+    root, _, _ = pestopia
+    report = scan_flat(root, source="Pestopia", source_kind="pest")
+    for folder, reason in report.wrong_kind.items():
+        assert len(reason) > 15, f"{folder} rejected without a usable reason"
+    assert report.summary()["wrong_kind_images"] > 0
+
+
+def test_known_disease_class_is_caught_by_the_category_gate(pestopia):
+    """'Tomato___Late_blight' resolves in the taxonomy, so the gate catches it
+    rather than the name heuristic."""
+    root, _, _ = pestopia
+    report = scan_flat(root, source="Pestopia", source_kind="pest")
+    assert "resolved to tomato__late_blight" in report.wrong_kind["Tomato___Late_blight"]
+
+
+def test_unknown_disease_class_is_caught_by_the_name_heuristic(pestopia):
+    """'Fungal Leaf Spot' is in no taxonomy, which is exactly the case a
+    hard-coded list of known diseases would miss."""
+    root, _, _ = pestopia
+    report = scan_flat(root, source="Pestopia", source_kind="pest")
+    assert "not an insect" in report.wrong_kind["Fungal Leaf Spot"]
+
+
+def test_mixed_kind_keeps_everything_it_can_resolve(pestopia):
+    """The rejection is a property of the source, not of the class."""
+    root, _, _ = pestopia
+    strict = scan_flat(root, source="Pestopia", source_kind="pest")
+    relaxed = scan_flat(root, source="Pestopia", source_kind="mixed")
+    assert relaxed.image_count > strict.image_count
+    assert "disease" in {r.category for r in relaxed.records}
+
+
+def test_disease_source_rejects_insect_classes(tmp_path):
+    """Enforcement runs both ways."""
+    root = tmp_path / "Diseases"
+    _img(root / "Tomato___Late_blight" / "a.jpg", seed=1)
+    _img(root / "aphids" / "b.jpg", seed=2)
+    report = scan_flat(root, source="D", source_kind="disease")
+    assert [r.class_id for r in report.records] == ["tomato__late_blight"]
+    assert "aphids" in report.wrong_kind
+
+
+@pytest.mark.parametrize("name", [
+    "Anthracnose", "Leaf Blight", "Powdery Mildew", "Fusarium Wilt",
+    "Bacterial Spot", "Root Rot", "leafspot", "Downy Mildew", "Citrus canker",
+])
+def test_disease_names_are_recognised(name):
+    from cropguard.data.ingest import looks_like_disease
+
+    assert looks_like_disease(name)
+
+
+@pytest.mark.parametrize("name", [
+    "aphids", "Stem Borer", "leaf miner", "armyworm", "whitefly", "mealybug",
+    "grasshopper", "thrips", "root grub", "ants", "Fruit Fly", "spider mites",
+])
+def test_pest_names_are_not_mistaken_for_diseases(name):
+    """Regression: the pest hint 'ant' substring-matched inside 'anthracnose',
+    letting a fungal class through as an insect."""
+    from cropguard.data.ingest import looks_like_disease
+
+    assert not looks_like_disease(name)
+
+
+# ------------------------------------------------- bare-name resolution
+def test_plain_pest_folder_names_resolve(taxonomy):
+    """Pest datasets use plain folder names; class ids carry a 'pest__' prefix."""
+    for name, expected in [
+        ("grasshopper", "pest__grasshopper"),
+        ("psyllid", "pest__psyllid"),
+        ("stem borer", "pest__stem_borer"),
+        ("mole cricket", "pest__mole_cricket"),
+        ("bagworm", "pest__bagworm"),
+    ]:
+        resolved = taxonomy.resolve(name)
+        assert resolved is not None and resolved.id == expected, name
+
+
+def test_ambiguous_bare_names_stay_unresolved(taxonomy):
+    """Four crops have a powdery mildew. Picking one silently would mislabel a
+    whole class, so the folder is left for a human instead."""
+    for name in ("powdery mildew", "anthracnose", "late blight", "rust", "healthy"):
+        assert taxonomy.resolve(name) is None, name
+        assert name in taxonomy.ambiguous_bare_names
+        assert len(taxonomy.ambiguous_bare_names[name]) > 1

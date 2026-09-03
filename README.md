@@ -73,14 +73,14 @@ python -m cropguard.benchmark --bundle artifacts/runs/demo/export --compare
 
 ## Training on real data
 
-The target corpora are **DLCPD-25** (232k images, 25 crops, field-collected and
-long-tailed) and **AP162** (194k images, 162 pest species). One command runs
+The target corpora are **Plant-Diseases-100k-Labelled-Images** for disease and
+**Pestopia** (Indian pests and pesticides) for pest. One command runs
 ingest → clean → split → EDA:
 
 ```bash
 python scripts/prepare_real_dataset.py \
-    --dlcpd /data/DLCPD-25 \
-    --ap162 /data/AP162 --ap162-classes /data/AP162/classes.txt \
+    --disease /data/Plant-Diseases-100k-Labelled-Images \
+    --pest    /data/Pestopia \
     --out artifacts/data/real --min-per-class 40 --workers 8
 
 python -m cropguard.train --config configs/default.yaml \
@@ -88,9 +88,15 @@ python -m cropguard.train --config configs/default.yaml \
     --set data.taxonomy=artifacts/data/real/taxonomy.json
 ```
 
-See **[docs/real_datasets.md](docs/real_datasets.md)** for access (both are
-Baidu Netdisk only), licensing (**AP162 is academic-use-only** — a real
-constraint if this ever ships to farmers), and how to read the EDA report.
+**Each source declares what it may contribute, and that is enforced.** A pest
+corpus may only produce pest classes; fungal and bacterial folders in it are
+rejected and listed, never trained on. Pest datasets ship them routinely, and
+letting them through would put the same condition on both branches of the model
+and corrupt the pest branch's life-stage and economic-threshold logic — a fungus
+has neither larvae nor a larvae-per-plant count. See
+**[docs/real_datasets.md](docs/real_datasets.md)**.
+
+DLCPD-25 and AP162 remain supported via `--dlcpd` and `--ap162`.
 
 Scope is the ten highest-value Indian crops **grown on land**, all of which
 DLCPD-25 covers: wheat, cotton, maize, soybean, potato, tomato, chilli/pepper,
@@ -115,6 +121,8 @@ Every one of these fails *silently* — the run completes and the metric looks f
 | Near-duplicates across a split | The model is evaluated on images it memorised. Grouping is by directory *and* stem; leakage is asserted. |
 | `Corn/healthy/healthy_0000.jpg` vs `Soybean/healthy/healthy_0000.jpg` | A folder-name-only group key merges two crops into one group, which then straddles splits. |
 | AP162 larva/adult as separate classes | Doubles the class count and splits scarce data. Merged into one pest class with the stage kept separately — adults on a trap mean *monitor*, larvae in the whorl mean *treat now*. |
+| Fungal classes inside a pest corpus | The same condition lands on both branches with labels from two sources, and the pest branch's life-stage and ETL logic is applied to a fungus. Rejected by category gate **and** by a name heuristic, so classes the taxonomy has never seen are caught too. |
+| `Anthracnose` read as an insect | The pest keyword `ant` substring-matches inside it. Hints now match whole words; short ones never match inside a word. |
 
 ---
 
@@ -307,8 +315,8 @@ src/cropguard/
 ## Tests
 
 ```bash
-pytest -q -m "not slow"      # 138 unit tests, ~8 s
-pytest -q                    # all 153, including the full
+pytest -q -m "not slow"      # 167 unit tests, ~30 s
+pytest -q                    # all 182, including the full
                              # train -> export -> device -> advice run (~3 min)
 ```
 

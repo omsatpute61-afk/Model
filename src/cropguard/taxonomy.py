@@ -111,6 +111,26 @@ class Taxonomy:
                     )
                 self._alias_map[key] = c.id
 
+        # Class ids carry a prefix ("pest__grasshopper", "wheat__leaf_rust"),
+        # so the bare name a dataset actually uses for its folder does not match
+        # the id. Build a fallback from the stripped form - but only where it is
+        # UNIQUE. "powdery mildew" is claimed by wheat, chilli, grape and mango,
+        # and silently picking one would mislabel a whole class; those stay
+        # unresolved so a human decides.
+        bare_counts: dict[str, list[str]] = {}
+        for c in self._classes:
+            bare = normalise_alias(c.id.split("__", 1)[-1])
+            if bare and bare not in self._alias_map:
+                bare_counts.setdefault(bare, []).append(c.id)
+        self._bare_map = {
+            bare: ids[0] for bare, ids in bare_counts.items() if len(ids) == 1
+        }
+        #: Bare names deliberately left unresolved because several classes claim
+        #: them; exposed so tooling can explain why a folder did not map.
+        self.ambiguous_bare_names = {
+            bare: tuple(ids) for bare, ids in bare_counts.items() if len(ids) > 1
+        }
+
         unknown = {c.category for c in self._classes} - set(CATEGORIES)
         if unknown:
             raise ValueError(f"unknown categories in taxonomy: {sorted(unknown)}")
@@ -159,8 +179,16 @@ class Taxonomy:
         (``Tomato___Late_blight``, ``tomato late blight``, ``Late Blight``).
         Rather than force users to rename thousands of directories, every class
         carries the upstream names it should absorb.
+
+        Falls back to the class id with its ``crop__``/``pest__`` prefix removed
+        when that form is unambiguous, so a dataset folder simply called
+        ``grasshopper`` finds ``pest__grasshopper`` without an explicit alias.
         """
-        return self._by_id.get(self._alias_map.get(normalise_alias(name), ""))
+        key = normalise_alias(name)
+        found = self._alias_map.get(key)
+        if found is None:
+            found = self._bare_map.get(key)
+        return self._by_id.get(found) if found else None
 
     def category_index(self, class_id: str) -> int:
         return CATEGORIES.index(self._by_id[class_id].category)

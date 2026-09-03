@@ -664,7 +664,8 @@
       "aliases": [
         "fall_armyworm",
         "Spodoptera_frugiperda",
-        "armyworm"
+        "armyworm",
+        "fall army worm"
       ]
     },
     {
@@ -684,7 +685,10 @@
       },
       "aliases": [
         "Helicoverpa_armigera",
-        "bollworm"
+        "bollworm",
+        "american bollworm",
+        "gram pod borer",
+        "helicoverpa"
       ]
     },
     {
@@ -704,7 +708,8 @@
       },
       "aliases": [
         "Pectinophora_gossypiella",
-        "pink_bollworm"
+        "pink_bollworm",
+        "pink boll worm"
       ]
     },
     {
@@ -724,7 +729,9 @@
       },
       "aliases": [
         "whitefly",
-        "Bemisia_tabaci"
+        "Bemisia_tabaci",
+        "white fly",
+        "whiteflies"
       ]
     },
     {
@@ -744,7 +751,8 @@
       },
       "aliases": [
         "aphids",
-        "Aphis_gossypii"
+        "Aphis_gossypii",
+        "aphid"
       ]
     },
     {
@@ -845,7 +853,8 @@
       },
       "aliases": [
         "thrips",
-        "Scirtothrips_dorsalis"
+        "Scirtothrips_dorsalis",
+        "thrip"
       ]
     },
     {
@@ -866,7 +875,11 @@
       "aliases": [
         "Tomato___Spider_mites Two-spotted_spider_mite",
         "spider_mite",
-        "red_mite"
+        "red_mite",
+        "mites",
+        "spider mites",
+        "red spider mite",
+        "two spotted spider mite"
       ]
     },
     {
@@ -886,7 +899,9 @@
       },
       "aliases": [
         "mealybug",
-        "Phenacoccus_solenopsis"
+        "Phenacoccus_solenopsis",
+        "mealy bug",
+        "mealybugs"
       ]
     },
     {
@@ -907,7 +922,9 @@
       "aliases": [
         "Tuta_absoluta",
         "leaf_miner",
-        "leafminer"
+        "leafminer",
+        "leaf miners",
+        "tuta"
       ]
     },
     {
@@ -1311,7 +1328,9 @@
       "symptoms": "Young larvae skeletonise leaves in a gregarious patch leaving a papery window; older larvae feed at night and hide in soil cracks by day.",
       "aliases": [
         "Spodoptera_litura",
-        "tobacco_caterpillar"
+        "tobacco_caterpillar",
+        "tobacco caterpillars",
+        "spodoptera litura larva"
       ],
       "etl": {
         "unit": "larvae_per_plant",
@@ -1350,7 +1369,9 @@
       "symptoms": "Seedlings cut clean off at ground level overnight; fat greasy grey larvae curl into a C when dug up near the stump.",
       "aliases": [
         "Agrotis",
-        "cutworm"
+        "cutworm",
+        "cutworms",
+        "cut worm"
       ],
       "etl": {
         "unit": "percent_plants_cut",
@@ -1370,7 +1391,9 @@
       "symptoms": "Dense reddish-brown hairy larvae marching in swarms and stripping leaves to the midrib, typically after the first monsoon showers.",
       "aliases": [
         "Amsacta",
-        "Aloa_lactinea"
+        "Aloa_lactinea",
+        "hairy caterpillars",
+        "red hairy caterpillar"
       ],
       "etl": {
         "unit": "larvae_per_metre_row",
@@ -1409,7 +1432,8 @@
       "spread_risk": "high",
       "symptoms": "Neat round exit holes in pods with frass at the entry; opened pods show a larva and partly eaten seed.",
       "aliases": [
-        "Etiella_zinckenella"
+        "Etiella_zinckenella",
+        "pod borers"
       ],
       "etl": {
         "unit": "percent_pods_damaged",
@@ -1428,7 +1452,9 @@
       "spread_risk": "high",
       "symptoms": "Central shoot dries into a dead heart that pulls out easily; the split stem shows a tunnel packed with frass.",
       "aliases": [
-        "Sesamia_inferens"
+        "Sesamia_inferens",
+        "stem borers",
+        "stemborer"
       ],
       "etl": {
         "unit": "percent_dead_hearts",
@@ -1448,7 +1474,10 @@
       "symptoms": "Wilted drooping shoot tips with a bore hole and frass; fruit shows a plugged entry hole and internal tunnelling.",
       "aliases": [
         "Dichocrocis_punctiferalis",
-        "Conogethes"
+        "Conogethes",
+        "shoot borer",
+        "fruit borer",
+        "shoot and fruit borer"
       ],
       "etl": {
         "unit": "percent_shoots_bored",
@@ -1557,7 +1586,9 @@
         "Amrasca_biguttula",
         "Cicadellidae",
         "jassid",
-        "leafhopper"
+        "leafhopper",
+        "leafhoppers",
+        "jassids"
       ],
       "etl": {
         "unit": "nymphs_per_leaf",
@@ -1597,7 +1628,9 @@
       "symptoms": "Tiny brown adults resting at 45 degrees on flush, yellow nymphs excreting white waxy tubules; the vector of citrus greening.",
       "aliases": [
         "Psyllidae",
-        "Diaphorina_citri"
+        "Diaphorina_citri",
+        "psyllids",
+        "citrus psylla"
       ],
       "etl": {
         "unit": "adults_per_flush_shoot",
@@ -1637,7 +1670,9 @@
       "aliases": [
         "Pentatomidae",
         "Nezara_viridula",
-        "stink_bug"
+        "stink_bug",
+        "stink bugs",
+        "shield bug"
       ],
       "etl": {
         "unit": "bugs_per_metre_row",
@@ -1673,7 +1708,9 @@
       "aliases": [
         "Coccidae",
         "Diaspididae",
-        "scale_insect"
+        "scale_insect",
+        "scale insects",
+        "scales"
       ],
       "etl": {
         "unit": "percent_twigs_infested",
@@ -1708,7 +1745,9 @@
       "symptoms": "Plants wilt and pull out with the roots eaten away; fat C-shaped white grubs with a brown head lie in the root zone.",
       "aliases": [
         "Scarabaeidae",
-        "white_grub"
+        "white_grub",
+        "white grubs",
+        "root grub"
       ],
       "etl": {
         "unit": "grubs_per_square_metre",
@@ -1744,7 +1783,9 @@
       "symptoms": "Small hard-shelled beetles chewing round holes or shot-holes and grazing long window-like strips from the leaf.",
       "aliases": [
         "Chrysomelidae",
-        "Monolepta_signata"
+        "Monolepta_signata",
+        "flea beetle",
+        "flea beetles"
       ],
       "etl": {
         "unit": "beetles_per_plant",
@@ -1764,7 +1805,9 @@
       "symptoms": "Adults and spiny yellow grubs both graze the leaf in parallel arcs, leaving a lace-like skeleton of veins.",
       "aliases": [
         "Epilachna_vigintioctopunctata",
-        "hadda_beetle"
+        "hadda_beetle",
+        "epilachna beetle",
+        "hadda beetles"
       ],
       "etl": {
         "unit": "beetles_per_plant",
@@ -1784,7 +1827,8 @@
       "symptoms": "Snouted beetles notching leaf margins or boring into stems and fruit; larvae tunnel inside unseen.",
       "aliases": [
         "Curculionidae",
-        "weevil"
+        "weevil",
+        "weevils"
       ],
       "generic": true,
       "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
@@ -1846,7 +1890,10 @@
       "aliases": [
         "Acrididae",
         "Atractomorpha_sinensis",
-        "Acrida_cinerea"
+        "Acrida_cinerea",
+        "grasshoppers",
+        "locust",
+        "locusts"
       ],
       "etl": {
         "unit": "hoppers_per_square_metre",
@@ -1865,7 +1912,8 @@
       "spread_risk": "medium",
       "symptoms": "Seedlings toppling in rows with severed roots and raised soil tunnels visible after irrigation.",
       "aliases": [
-        "Gryllotalpa"
+        "Gryllotalpa",
+        "mole crickets"
       ],
       "generic": true,
       "etl_note": "Family/genus-level class - no single published economic threshold. Scout, identify the species, and use the threshold your KVK publishes for it."
@@ -1881,7 +1929,8 @@
       "symptoms": "Plants dry and pull out with the roots and stem base eaten hollow and packed with soil; earthen runways up the stem.",
       "aliases": [
         "Termitidae",
-        "termite"
+        "termite",
+        "termites"
       ],
       "etl": {
         "unit": "percent_plants_damaged",
@@ -1901,7 +1950,11 @@
       "symptoms": "Irregular holes chewed from the leaf interior with silvery slime trails; damage appears overnight and in damp weather.",
       "aliases": [
         "Lissachatina_fulica",
-        "Limax_maximus"
+        "Limax_maximus",
+        "snail",
+        "snails",
+        "slug",
+        "slugs"
       ],
       "etl": {
         "unit": "molluscs_per_square_metre",

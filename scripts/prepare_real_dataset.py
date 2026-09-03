@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
-"""Ingest -> clean -> EDA -> manifest for DLCPD-25 and AP162.
+"""Ingest -> clean -> EDA -> manifest for the disease and pest corpora.
 
     python scripts/prepare_real_dataset.py \
-        --dlcpd /data/DLCPD-25 \
-        --ap162 /data/AP162 --ap162-classes /data/AP162/classes.txt \
+        --disease /data/Plant-Diseases-100k-Labelled-Images \
+        --pest    /data/Pestopia \
         --out artifacts/data/real \
         --min-per-class 40
+
+Each source declares what it is allowed to contribute. A pest source may only
+produce pest (and healthy/background) classes: a fungal or bacterial class
+inside a pest dataset is rejected and listed, never trained on. Feeding it in
+would put the same condition on both branches of the model with labels from two
+different sources, and would corrupt the pest branch's life-stage and
+economic-threshold logic - a fungus has neither.
+
+The older corpora are still supported: --dlcpd (nested Crop/Class) and --ap162.
 
 Runs the four steps in order and writes everything it learned to ``--out``:
 
@@ -39,7 +48,12 @@ from cropguard.data.clean import (  # noqa: E402
     drop_rare_classes,
     inspect_all,
 )
-from cropguard.data.ingest import detect_layout, scan_ap162, scan_nested  # noqa: E402
+from cropguard.data.ingest import (  # noqa: E402
+    detect_layout,
+    scan_ap162,
+    scan_flat,
+    scan_nested,
+)
 from cropguard.data.manifest import (  # noqa: E402
     manifest_summary,
     scan_image_folder,
@@ -68,11 +82,16 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
+    p.add_argument("--disease", help="disease corpus root, e.g. Plant-Diseases-100k-Labelled-Images")
+    p.add_argument("--pest", help="pest corpus root, e.g. Pestopia")
     p.add_argument("--dlcpd", help="unpacked DLCPD-25 root (Crop/Class/*.jpg)")
     p.add_argument("--ap162", help="unpacked AP162 root")
     p.add_argument("--ap162-classes", help="AP162 classes.txt (index<TAB>name)")
     p.add_argument("--extra-source", action="append", default=[],
-                   help="additional flat ImageFolder source (repeatable)")
+                   help="additional flat ImageFolder source, treated as mixed (repeatable)")
+    p.add_argument("--allow-disease-in-pest-source", action="store_true",
+                   help="do NOT reject disease classes found in the pest corpus "
+                        "(off by default; they belong to the disease branch)")
     p.add_argument("--out", default="artifacts/data/real")
     p.add_argument("--crops", default=",".join(DEFAULT_CROPS),
                    help="comma separated crops to keep, or 'all'")
@@ -95,8 +114,8 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=getattr(logging, args.log_level.upper(), logging.INFO),
                         format="%(levelname)-7s %(name)s | %(message)s")
 
-    if not (args.dlcpd or args.ap162 or args.extra_source):
-        p.error("give at least one of --dlcpd, --ap162 or --extra-source")
+    if not (args.disease or args.pest or args.dlcpd or args.ap162 or args.extra_source):
+        p.error("give at least one of --disease, --pest, --dlcpd, --ap162 or --extra-source")
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -109,6 +128,25 @@ def main(argv: list[str] | None = None) -> int:
     banner("1. INGEST")
     records = []
     reports = {}
+
+    def ingest_source(path: str, name: str, kind: str) -> None:
+        """Read one corpus with its kind enforced, whatever its layout."""
+        root = Path(path)
+        layout = detect_layout(root)
+        LOGGER.info("%s layout detected as %r, kind=%s", name, layout, kind)
+        if layout == "nested":
+            rep = scan_nested(root, taxonomy, source=name, crops=crops, source_kind=kind)
+        else:
+            rep = scan_flat(root, taxonomy, source=name, source_kind=kind, crops=crops)
+        print(rep.format())
+        reports[name] = rep.summary()
+        records.extend(rep.records)
+
+    pest_kind = "mixed" if args.allow_disease_in_pest_source else "pest"
+    if args.disease:
+        ingest_source(args.disease, "Plant-Diseases-100k", "disease")
+    if args.pest:
+        ingest_source(args.pest, "Pestopia", pest_kind)
 
     if args.dlcpd:
         root = Path(args.dlcpd)
@@ -141,6 +179,13 @@ def main(argv: list[str] | None = None) -> int:
         records.extend(recs)
 
     (out / "ingest_report.json").write_text(json.dumps(reports, indent=2), encoding="utf-8")
+
+    rejected = sum(r.get("wrong_kind_images", 0) for r in reports.values())
+    if rejected:
+        print(
+            f"\nREJECTED {rejected} image(s) whose class does not belong in its source "
+            f"(see wrong_kind_detail in ingest_report.json)."
+        )
     if not records:
         print("\nnothing ingested - check the paths and the unmapped folders above",
               file=sys.stderr)
