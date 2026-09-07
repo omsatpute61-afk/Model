@@ -98,6 +98,23 @@ has neither larvae nor a larvae-per-plant count. See
 
 DLCPD-25 and AP162 remain supported via `--dlcpd` and `--ap162`.
 
+### Filling the gaps from iNaturalist
+
+Where the curated corpora are thin — Indian pests especially — images can be
+collected from iNaturalist, with the search terms derived from the taxonomy's
+own scientific names rather than hand-written:
+
+```bash
+python scripts/scrape_dataset.py --category pest --dry-run   # what exists
+python scripts/scrape_dataset.py --category pest --per-class 200 --place india
+```
+
+Only community-verified (`research grade`) observations under reusable licences
+are downloaded, at the published rate limit, and every photographer, licence and
+source URL is recorded in `provenance.csv` — attribution is a licence condition,
+not paperwork. See **[docs/scraping.md](docs/scraping.md)**, including why this
+is good for pests, weak for fungal diseases, and what the domain gap costs you.
+
 Scope is the ten highest-value Indian crops **grown on land**, all of which
 DLCPD-25 covers: wheat, cotton, maize, soybean, potato, tomato, chilli/pepper,
 mango, citrus, grape. Rice is out of scope by design. Four genuine top-ten
@@ -306,7 +323,7 @@ src/cropguard/
 ├── evaluate.py          per-class metrics, confusions, thresholds
 ├── export.py            ONNX / INT8 / TorchScript, all verified
 ├── benchmark.py         latency, size, throughput on the target
-├── data/                manifest, ingest, cleaning, EDA, augmentation, synthetic
+├── data/                manifest, ingest, cleaning, EDA, scraping, augmentation
 ├── models/              backbones, multi-head detector, losses
 ├── edge/                numpy preprocessing + onnxruntime runtime
 └── resources/           taxonomy.json, advisory.json
@@ -315,8 +332,8 @@ src/cropguard/
 ## Tests
 
 ```bash
-pytest -q -m "not slow"      # 167 unit tests, ~30 s
-pytest -q                    # all 182, including the full
+pytest -q -m "not slow"      # 191 unit tests, ~80 s
+pytest -q                    # all 206, including the full
                              # train -> export -> device -> advice run (~3 min)
 ```
 

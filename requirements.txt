@@ -7,4 +7,5 @@ pyyaml>=6.0            # YAML configs
 onnx>=1.15             # ONNX export
 onnxruntime>=1.17      # export verification, INT8 quantisation, edge inference
 onnxscript>=0.1        # required by torch>=2.6's ONNX exporter
+requests>=2.31         # iNaturalist collection (scripts/scrape_dataset.py)
 pytest>=7.4            # tests
