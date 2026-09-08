@@ -1,0 +1,80 @@
+# Disease-only model: Plant-Diseases-100k-Labelled-Images, on a Colab GPU.
+#
+#   python scripts/prepare_real_dataset.py --kaggle-disease \
+#       --out artifacts/data/disease --min-per-class 40
+#   python -m cropguard.train --config configs/disease.yaml
+#
+# Settings marked "CHECK EDA" depend on what the corpus turns out to look like;
+# artifacts/data/disease/eda.md answers each one. Read it before a long run.
+
+run_name: cropguard-disease
+output_dir: artifacts/runs
+seed: 1337
+
+data:
+  manifest: artifacts/data/disease/manifest.csv
+  taxonomy: artifacts/data/disease/taxonomy.json
+
+  # CHECK EDA "share under 224 px". PlantVillage-derived corpora are usually
+  # 256x256, in which case 224 is right; drop to 160/192 if they are smaller.
+  image_size: 224
+
+  batch_size: 64          # fits a T4 at 224px; halve on OOM
+  num_workers: 2          # Colab gives 2 vCPU
+
+  # ~100k images with healthy classes usually far larger than the rare
+  # diseases. Without this the model answers "healthy" and scores well.
+  balanced_sampling: true
+
+  # These corpora are collected under even light against plain backgrounds.
+  # A model trained on that collapses on a phone photo taken at noon in a
+  # standing crop, so the field simulation stays at full strength. CHECK EDA:
+  # a single distinct resolution confirms a studio corpus.
+  aug_strength: 1.0
+
+model:
+  backbone: mobilenet_v3_small
+  pretrained: true
+  dropout: 0.2
+  embedding_dim: 128
+
+optim:
+  epochs: 25              # 100k images is a lot of steps per epoch
+  lr: 0.0003
+  backbone_lr_scale: 0.1
+  weight_decay: 0.0001
+  warmup_epochs: 2
+  grad_clip: 1.0
+  label_smoothing: 0.05
+
+  # CHECK EDA imbalance ratio. Disease corpora are usually less skewed than
+  # pest ones, so this starts off; turn on above roughly 20:1.
+  use_focal: false
+  focal_gamma: 2.0
+
+  # Worth more here than in the pest model: this corpus spans healthy, disease,
+  # deficiency and abiotic classes, so the coarse head has something real to
+  # separate and becomes a useful fallback when the fine head is unsure.
+  category_weight: 0.3
+
+  # No insects in a disease corpus, so this head has nothing to learn and is
+  # masked on every image. 0 records that rather than tuning anything.
+  life_stage_weight: 0.0
+
+  # PlantVillage-derived sets do not label severity. Masked automatically.
+  severity_weight: 0.0
+
+  mixup_alpha: 0.0
+  ema_decay: 0.999
+  use_ema: true
+  freeze_epochs: 1
+  early_stopping_patience: 6
+  amp: true
+
+policy:
+  max_selective_error: 0.10
+  min_coverage: 0.50
+  min_threshold: 0.30
+  calibrate: true
+  fit_ood: true
+  ood_percentile: 97.5

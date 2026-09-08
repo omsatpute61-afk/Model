@@ -71,6 +71,22 @@ python -m cropguard.benchmark --bundle artifacts/runs/demo/export --compare
 > the pipeline runnable and testable today. **It is not a substitute for field
 > data** and says nothing about real-world accuracy.
 
+## Colab notebooks
+
+Two branches, two models, two notebooks — kept apart deliberately, because the
+corpora disagree about what a class means and one model trained on both would
+carry the same condition labelled from two sources:
+
+| | |
+|---|---|
+| [`notebooks/train_pest_colab.ipynb`](notebooks/train_pest_colab.ipynb) | Pestopia → clean → EDA → **top up thin classes from iNaturalist** → train → export |
+| [`notebooks/train_disease_colab.ipynb`](notebooks/train_disease_colab.ipynb) | Plant-Diseases-100k → clean → EDA → train → export |
+
+Open via Colab → File → Open notebook → GitHub, or upload the `.ipynb`. Set the
+runtime to a T4 GPU first. Each one prints the corpus's real class folders and
+what will be rejected or left unmapped *before* training, so the data is never a
+black box.
+
 ## Training on real data
 
 The target corpora are **Plant-Diseases-100k-Labelled-Images** for disease and
