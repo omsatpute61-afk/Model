@@ -313,7 +313,7 @@ Contracts for the rest of the Smart Farming Assistant:
 |---|---|
 | Mobile app / field display | `Diagnosis.to_dict()` — class, confidence, severity, top-k, novelty, full advisory |
 | SMS gateway | `Advisory.to_sms()` / `Alert.to_sms()` — ≤160 chars, never cuts a word |
-| Irrigation module | `Advisory.irrigation_advice`, plus the `abiotic__water_stress` / `abiotic__waterlogging` classes |
+| Irrigation engine | `PestPressureTracker.irrigation_constraint(field_id)` — structured flags, never a volume. See **[docs/irrigation_contract.md](docs/irrigation_contract.md)** |
 | Environmental monitoring | feeds `WeatherReading` into `infection_risk()` |
 | Analytics dashboard | `Alert.to_dict()` per field/zone, and the run's `eval/*_report.json` |
 | Localisation | `AdvisoryEngine.message(key, lang)` — English and Hindi for the core alert strings |
@@ -321,6 +321,17 @@ Contracts for the rest of the Smart Farming Assistant:
 Everything crossing a module boundary is plain JSON-serialisable data, and the
 edge-facing modules (`taxonomy`, `advisory`, `early_warning`, `edge`, `ood`)
 import nothing heavier than numpy.
+
+The irrigation boundary is the one worth reading about before wiring anything
+up. Both subsystems can talk about water, and on a day when the FAO-56 balance
+says *water today, 2 h 40 min* while this model says *suspend overhead
+irrigation*, both are right and the farmer gets an incoherent answer. The split
+is: **the irrigation engine owns whether and how much; this model may only
+constrain how and when.** So the model emits flags (`no_overhead`,
+`prefer_furrow`, `morning_only`, `drain`, …) rather than prose for someone to
+parse, and exactly one class — waterlogging — may stop an irrigation outright.
+[docs/irrigation_contract.md](docs/irrigation_contract.md) has the vocabulary,
+the precedence rule and the merge semantics.
 
 ---
 
@@ -330,6 +341,7 @@ import nothing heavier than numpy.
 src/cropguard/
 ├── taxonomy.py          70-class registry + agronomic metadata      (stdlib)
 ├── advisory.py          class -> farmer recommendation              (stdlib)
+├── irrigation_contract.py  the boundary with the irrigation engine  (stdlib)
 ├── early_warning.py     pest trend + weather infection risk         (stdlib)
 ├── ood.py               Mahalanobis novelty detector                (numpy)
 ├── model_card.py        the model/consumer contract                 (stdlib)
@@ -348,8 +360,8 @@ src/cropguard/
 ## Tests
 
 ```bash
-pytest -q -m "not slow"      # 191 unit tests, ~80 s
-pytest -q                    # all 206, including the full
+pytest -q -m "not slow"      # 224 unit tests, ~85 s
+pytest -q                    # all 239, including the full
                              # train -> export -> device -> advice run (~3 min)
 ```
 

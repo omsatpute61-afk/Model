@@ -28,11 +28,13 @@ from __future__ import annotations
 
 import statistics
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from typing import Sequence
 
 from .advisory import AdvisoryEngine, default_engine
+from .irrigation_contract import NO_CONSTRAINT, IrrigationConstraint
+from .irrigation_contract import merge as merge_constraints
 from .taxonomy import Taxonomy, load_taxonomy
 
 ALERT_LEVELS = ("none", "info", "watch", "warning", "critical")
@@ -81,6 +83,9 @@ class Alert:
     last_seen: datetime | None = None
     recommended_action: str = ""
     evidence: list[str] = field(default_factory=list)
+    #: What this alert is allowed to say to the irrigation engine. See
+    #: :mod:`cropguard.irrigation_contract`.
+    irrigation_constraint: IrrigationConstraint = NO_CONSTRAINT
 
     @property
     def level_rank(self) -> int:
@@ -105,6 +110,7 @@ class Alert:
             "last_seen": self.last_seen.isoformat() if self.last_seen else None,
             "recommended_action": self.recommended_action,
             "evidence": list(self.evidence),
+            "irrigation_constraint": self.irrigation_constraint.to_dict(),
         }
 
     def to_sms(self, limit: int = 160) -> str:
@@ -247,6 +253,29 @@ class PestPressureTracker:
         alerts.sort(key=lambda a: (-a.level_rank, -a.detections))
         return alerts
 
+    def irrigation_constraint(
+        self,
+        field_id: str = "default",
+        zone: str | None = None,
+        now: datetime | None = None,
+    ) -> IrrigationConstraint:
+        """The one constraint the irrigation engine should act on for this field.
+
+        This, not a single photo's advisory, is what the irrigation subsystem
+        calls: it asks "what is live on Field 1 right now?" and gets back one
+        merged answer whose contradictions have already been settled.
+
+        Note what it still does not return - a volume, a duration, or a
+        decision to irrigate. Those stay with the water balance. See
+        :mod:`cropguard.irrigation_contract` for the full precedence rule.
+        """
+        constraints = [
+            a.irrigation_constraint
+            for a in self.evaluate(field_id=field_id, zone=zone, now=now)
+            if not a.irrigation_constraint.is_empty
+        ]
+        return merge_constraints(constraints) if constraints else NO_CONSTRAINT
+
     def _build_alert(
         self, class_id: str, zone: str, events: list[Detection], field_id: str, now: datetime
     ) -> Alert | None:
@@ -334,6 +363,17 @@ class PestPressureTracker:
             last_seen=events[-1].timestamp,
             recommended_action=base.action,
             evidence=evidence,
+            # Carry the advisory's constraint up to field level, re-priced
+            # against the alert's own level rather than the single-frame
+            # urgency it was built from.
+            irrigation_constraint=(
+                base.irrigation_constraint
+                if base.irrigation_constraint.is_empty
+                else replace(
+                    base.irrigation_constraint,
+                    priority=ALERT_LEVELS.index(level),
+                )
+            ),
         )
 
     def _message(

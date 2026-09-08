@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "disclaimer": "Advisories are decision support, not a prescription. Insecticide and fungicide choice, dose, water volume and pre-harvest interval must follow the product label and the recommendations of the State Agriculture Department / local KVK. Always confirm a high-impact diagnosis with an extension officer before a field-wide spray.",
   "urgency_levels": ["none", "info", "watch", "warning", "critical"],
   "defaults": {
@@ -14,6 +14,7 @@
       "ipm": ["Improve air movement by weeding and correct spacing.", "Switch the next irrigation to furrow or drip."],
       "chemical_guidance": "Use a protectant fungicide/bactericide approved for this crop-disease pair in your state; rotate the mode-of-action group between sprays.",
       "irrigation_advice": "Keep the canopy dry - irrigate early in the day, at the root zone.",
+      "irrigation_constraint": ["no_overhead", "prefer_furrow", "morning_only"],
       "escalate_if": "More than 10% of plants affected, or the spot count doubles within 48 hours."
     },
     "pest": {
@@ -27,6 +28,7 @@
       "ipm": ["Conserve natural enemies; avoid broad-spectrum insecticides.", "Remove alternate weed hosts on bunds."],
       "chemical_guidance": "Spray only after the economic threshold is crossed, using an insecticide approved for this crop-pest pair; rotate chemistry to slow resistance.",
       "irrigation_advice": "No irrigation change required for this detection alone.",
+      "irrigation_constraint": [],
       "escalate_if": "The economic threshold is crossed, or counts rise on two consecutive scouting rounds."
     },
     "deficiency": {
@@ -40,6 +42,7 @@
       "ipm": [],
       "chemical_guidance": "Follow the soil-test-based recommendation for the crop; foliar sprays correct symptoms but do not replace the soil dose.",
       "irrigation_advice": "Keep moisture adequate - nutrient uptake stops in dry soil.",
+      "irrigation_constraint": ["avoid_stress"],
       "escalate_if": "Symptoms persist 10-14 days after correction, which suggests a pH or root problem rather than supply."
     },
     "abiotic": {
@@ -49,6 +52,7 @@
       "ipm": [],
       "chemical_guidance": "No plant protection product is indicated for abiotic stress.",
       "irrigation_advice": "Adjust the irrigation schedule as advised below.",
+      "irrigation_constraint": [],
       "escalate_if": "Symptoms persist after the root zone is at field capacity."
     },
     "healthy": {
@@ -57,13 +61,14 @@
       "steps": ["Continue the normal scouting round."],
       "ipm": [], "chemical_guidance": "No spray indicated.",
       "irrigation_advice": "Follow the existing irrigation schedule.",
+      "irrigation_constraint": [],
       "escalate_if": "Any new spotting, curling or discolouration appears."
     },
     "background": {
       "urgency": "none", "action": "retake_photo", "recheck_hours": 0,
       "headline": "No crop leaf in the picture",
       "steps": ["Hold the camera 20-30 cm from a single leaf, fill the frame, and avoid direct shadow."],
-      "ipm": [], "chemical_guidance": "", "irrigation_advice": "", "escalate_if": ""
+      "ipm": [], "chemical_guidance": "", "irrigation_advice": "", "irrigation_constraint": [], "escalate_if": ""
     }
   },
   "classes": {
@@ -80,6 +85,7 @@
       "ipm": ["Destroy volunteer potato/tomato plants nearby.", "Widen spacing at the next planting and use resistant varieties."],
       "chemical_guidance": "A protectant (contact) fungicide first, followed by a systemic from a different mode-of-action group if wet weather continues. Confirm the product and dose with your KVK.",
       "irrigation_advice": "Suspend overhead irrigation; irrigate in furrows early in the morning only.",
+      "irrigation_constraint": ["no_overhead", "prefer_furrow", "morning_only"],
       "escalate_if": "New lesions appear on upper leaves within 24 hours."
     },
     "potato__late_blight": {
@@ -90,11 +96,12 @@
         "Apply a protectant fungicide today with full underside coverage.",
         "Remove and destroy affected haulm; do not dump it at the field edge.",
         "Plan to dehaulm 2-3 weeks before harvest to protect the tubers.",
-        "Do not irrigate overhead while humidity stays above 85%."
+        "Do not irrigate overhead while the weather stays damp and overcast."
       ],
       "ipm": ["Earth up well so spores cannot reach the tubers.", "Use certified disease-free seed tubers next season."],
       "chemical_guidance": "Protectant contact fungicide first; alternate mode-of-action groups if the wet spell continues. Confirm dose with your KVK.",
       "irrigation_advice": "Suspend irrigation during the wet spell; resume light furrow irrigation once the canopy dries.",
+      "irrigation_constraint": ["no_overhead", "prefer_furrow", "morning_only"],
       "escalate_if": "Lesions spread to stems, or more than 5% of the canopy is affected."
     },
     "rice__blast": {
@@ -109,6 +116,7 @@
       "ipm": ["Balance N with potash and silicon.", "Choose blast-resistant varieties next season and treat the seed."],
       "chemical_guidance": "A systemic fungicide recommended for blast in your state, applied at the boot stage; confirm with the KVK.",
       "irrigation_advice": "Alternate wetting and drying rather than continuous deep flooding.",
+      "irrigation_constraint": ["alternate_wet_dry"],
       "escalate_if": "Lesions reach the flag leaf or the neck of emerging panicles."
     },
     "rice__bacterial_leaf_blight": {
@@ -123,6 +131,7 @@
       "ipm": ["Avoid clipping seedling tips at transplanting.", "Use resistant varieties and clean seed next season."],
       "chemical_guidance": "This is bacterial - ordinary fungicides are ineffective. Use only a bactericide approved in your state, if any is recommended.",
       "irrigation_advice": "Drain; keep shallow water rather than deep flooding.",
+      "irrigation_constraint": ["drain", "alternate_wet_dry"],
       "escalate_if": "Wilting of whole seedlings (kresek) appears, or more than 20% leaf area is affected."
     },
     "tomato__yellow_leaf_curl_virus": {
@@ -138,6 +147,7 @@
       "ipm": ["Use a border crop of maize/sorghum as a barrier.", "Raise nurseries under 40-mesh insect-proof net.", "Prefer tolerant hybrids next season."],
       "chemical_guidance": "Target the whitefly vector, rotating insecticide groups. No product cures the virus itself.",
       "irrigation_advice": "Maintain even moisture; stressed plants show worse symptoms.",
+      "irrigation_constraint": ["avoid_stress"],
       "escalate_if": "More than 10% of plants show curling, or whitefly counts keep rising."
     },
     "cotton__leaf_curl_virus": {
@@ -146,12 +156,13 @@
       "farmer_message": "Cotton leaf curl suspected. Remove infected plants and bring whitefly under control now - the virus has no cure.",
       "steps": [
         "Rogue out infected plants early in the season.",
-        "Bring whitefly below threshold; that is the only way to stop spread.",
+        "Get the whitefly numbers down - that is the only way to stop the spread.",
         "Destroy alternate hosts (bhindi, weeds) around the field."
       ],
       "ipm": ["Avoid excessive nitrogen, which favours whitefly.", "Sow recommended tolerant varieties at the recommended date."],
       "chemical_guidance": "Vector management only, rotating insecticide groups; consult your KVK for the current state advisory.",
       "irrigation_advice": "Avoid moisture stress, which worsens symptom expression.",
+      "irrigation_constraint": ["avoid_stress"],
       "escalate_if": "Incidence crosses 10% of plants, or new flushes emerge already curled."
     },
     "sugarcane__red_rot": {
@@ -167,6 +178,7 @@
       "ipm": ["Plant only resistant varieties and heat/fungicide-treated setts.", "Rotate with rice or a non-host crop for 2 seasons."],
       "chemical_guidance": "There is no effective standing-crop cure. Management is varietal resistance, sett treatment and sanitation.",
       "irrigation_advice": "Improve drainage; avoid water flowing from infected to healthy patches.",
+      "irrigation_constraint": ["drain"],
       "escalate_if": "More than 5% clumps affected - plan a variety change for the next planting."
     },
     "grape__downy_mildew": {
@@ -181,6 +193,7 @@
       "ipm": ["Manage canopy density and shoot positioning.", "Track leaf wetness hours - infection needs a wet period."],
       "chemical_guidance": "Protectant before rain, systemic curative only within the recommended window; rotate groups and respect residue limits for export.",
       "irrigation_advice": "Irrigate at the root zone in the morning; never wet the canopy in the evening.",
+      "irrigation_constraint": ["no_overhead", "prefer_furrow", "morning_only", "no_evening"],
       "escalate_if": "Oil spots appear on more than 5% of leaves or on the bunches."
     },
     "pest__fall_armyworm": {
@@ -201,6 +214,7 @@
       ],
       "chemical_guidance": "Only above the 5-10% whorl damage threshold, with a whorl-directed application of an approved insecticide; rotate groups every application.",
       "irrigation_advice": "No change needed for the pest itself.",
+      "irrigation_constraint": [],
       "escalate_if": "Damage crosses 10% of plants, or larvae reach the tassel/cob stage."
     },
     "pest__brown_planthopper": {
@@ -220,6 +234,7 @@
       ],
       "chemical_guidance": "Only above 10 hoppers/hill (pre-flowering) with natural enemies absent; use a selective insecticide directed at the plant base.",
       "irrigation_advice": "Drain for 3-4 days, then keep shallow intermittent water.",
+      "irrigation_constraint": ["drain", "alternate_wet_dry"],
       "escalate_if": "Circular yellow-brown patches (hopper burn) appear anywhere in the field - treat as an emergency."
     },
     "pest__whitefly": {
@@ -234,6 +249,7 @@
       "ipm": ["Spray neem oil covering leaf undersides.", "Avoid excess nitrogen.", "Conserve Encarsia and predatory beetles by avoiding broad-spectrum sprays."],
       "chemical_guidance": "Above 6 adults/leaf, use an approved insecticide with good underside coverage; rotate groups strictly - whitefly develops resistance fast.",
       "irrigation_advice": "No change needed for the pest itself.",
+      "irrigation_constraint": [],
       "escalate_if": "Counts rise for two consecutive scouting rounds, or leaf-curl symptoms start appearing."
     },
     "pest__pink_bollworm": {
@@ -249,6 +265,7 @@
       "ipm": ["Release Trichogramma bactrae where available.", "Do not ratoon cotton.", "Deep ploughing after harvest to destroy carry-over larvae."],
       "chemical_guidance": "Only after 8 moths/trap/night for 3 nights or 10% rosette flowers; rotate insecticide groups every spray.",
       "irrigation_advice": "Avoid late irrigation that extends the crop past its recommended duration.",
+      "irrigation_constraint": ["no_late_season"],
       "escalate_if": "More than 10% of opened bolls contain larvae."
     },
     "pest__spider_mite": {
@@ -263,6 +280,7 @@
       "ipm": ["Stop broad-spectrum insecticides - they kill predatory mites and cause flare-ups.", "Keep the crop free of moisture stress.", "Control dust on field roads."],
       "chemical_guidance": "Use a specific acaricide, not a general insecticide, and alternate the group between applications.",
       "irrigation_advice": "Avoid moisture stress - dry stressed plants favour mites.",
+      "irrigation_constraint": ["avoid_stress"],
       "escalate_if": "Webbing spreads across the upper canopy or bronzing covers more than 10% of leaf area."
     },
     "deficiency__nitrogen": {
@@ -277,6 +295,7 @@
       "ipm": [],
       "chemical_guidance": "Follow the soil-test based split schedule. Excess nitrogen invites blast, BLB, planthopper and whitefly - do not overdose.",
       "irrigation_advice": "Irrigate lightly after top-dressing so the nutrient reaches the root zone.",
+      "irrigation_constraint": ["short_frequent"],
       "escalate_if": "No greening within 10-14 days - check for waterlogging or root damage."
     },
     "deficiency__zinc": {
@@ -291,20 +310,23 @@
       "ipm": [],
       "chemical_guidance": "Soil application of zinc sulphate at the recommended rate every 2-3 seasons; foliar spray for immediate correction.",
       "irrigation_advice": "Drain waterlogged patches - continuous flooding worsens zinc deficiency in rice.",
+      "irrigation_constraint": ["alternate_wet_dry"],
       "escalate_if": "Symptoms persist after two foliar sprays - test the soil pH."
     },
     "abiotic__water_stress": {
       "urgency": "warning", "action": "irrigate_now", "recheck_hours": 6,
       "headline": "Water stress - irrigate",
-      "farmer_message": "Crop shows water stress (leaf rolling, dull canopy). Check soil moisture at root depth and irrigate if the sensor is below the set point.",
+      "farmer_message": "Crop shows water stress - leaves are rolling and the canopy looks dull. Dig at root depth; if the soil is dry there, water today.",
       "steps": [
-        "Confirm with the soil moisture sensor at root depth before irrigating.",
+        "Dig down to root depth and feel the soil before watering.",
         "If leaves stay rolled after 9-10 am, irrigate the same day.",
         "Irrigate early morning or evening to cut evaporation loss."
       ],
       "ipm": [],
       "chemical_guidance": "No plant protection product is indicated.",
-      "irrigation_advice": "Irrigate now if soil moisture is below the crop set point; prefer drip or alternate-furrow to save water.",
+      "irrigation_advice": "Water at the root zone - drip or alternate furrows - once the soil is dry at root depth.",
+      "irrigation_constraint": ["prefer_furrow"],
+      "water_status_evidence": "dry",
       "escalate_if": "Rolling continues 24 hours after irrigation - check for root disease, nematodes or a hardpan."
     },
     "abiotic__heat_scald": {
@@ -319,6 +341,7 @@
       "ipm": [],
       "chemical_guidance": "No plant protection product is indicated; potassium nutrition improves heat tolerance.",
       "irrigation_advice": "Shorter, more frequent irrigations during the heat spell; irrigate outside 11:00-16:00.",
+      "irrigation_constraint": ["short_frequent", "morning_only"],
       "escalate_if": "Flower or fruit drop begins, or the forecast holds above 38 C for 3 more days."
     },
     "abiotic__waterlogging": {
@@ -334,6 +357,8 @@
       "ipm": ["Expect a rise in fungal root diseases after flooding - scout in 5-7 days."],
       "chemical_guidance": "A protective fungicide drench may be advised after prolonged flooding; confirm with your KVK.",
       "irrigation_advice": "Stop all irrigation; the priority is drainage.",
+      "irrigation_constraint": ["suspend", "drain"],
+      "water_status_evidence": "waterlogged",
       "escalate_if": "Water stands for more than 48 hours, or plants wilt after the water recedes."
     }
   },

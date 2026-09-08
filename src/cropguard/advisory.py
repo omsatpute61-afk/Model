@@ -25,6 +25,12 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from .irrigation_contract import (
+    MAX_TTL_HOURS,
+    NO_CONSTRAINT,
+    IrrigationConstraint,
+    validate_flags,
+)
 from .taxonomy import RESOURCE_DIR, Taxonomy, load_taxonomy
 
 ADVISORY_PATH = RESOURCE_DIR / "advisory.json"
@@ -90,7 +96,18 @@ def _bump(urgency: str, steps: int) -> str:
 
 @dataclass
 class Advisory:
-    """A farmer-facing recommendation derived from one or more detections."""
+    """A farmer-facing recommendation derived from one or more detections.
+
+    Two surfaces, and the difference matters. ``headline``, ``message``,
+    :meth:`to_sms` and the irrigation constraint's own phrases are the *voice*
+    path - what a farmer hears or reads on a feature phone. They carry no
+    units, no percentages and no model vocabulary, per the FasalSetu voice rule.
+
+    ``steps``, ``notes``, ``ipm`` and ``chemical_guidance`` are the *detail*
+    path - the "Why?" screen and the audit surface. Economic thresholds,
+    scouting counts and confidence belong there, where a farmer who wants the
+    number can go and find it.
+    """
 
     class_id: str
     display_name: str
@@ -103,6 +120,10 @@ class Advisory:
     ipm: list[str] = field(default_factory=list)
     chemical_guidance: str = ""
     irrigation_advice: str = ""
+    #: The machine-readable half of ``irrigation_advice``. The irrigation
+    #: engine consumes this; the prose is for the farmer. See
+    #: :mod:`cropguard.irrigation_contract` for who owns what.
+    irrigation_constraint: IrrigationConstraint = field(default=NO_CONSTRAINT)
     escalate_if: str = ""
     recheck_hours: int = 48
     confidence: float | None = None
@@ -130,6 +151,19 @@ class Advisory:
             cut = cut[: cut.rindex(" ")]
         return cut.rstrip(" ,.;:") + "..."
 
+    def voice_lines(self) -> list[str]:
+        """Three facts maximum, for TTS or a spoken prompt.
+
+        Deliberately not the same as :meth:`to_sms`: speech tolerates a
+        different rhythm from a 160-character message, and the irrigation
+        constraint has to be spoken as an instruction rather than filed under
+        an "irrigation advice" heading nobody reads aloud.
+        """
+        lines = [self.headline]
+        lines.extend(self.irrigation_constraint.phrases()[:1])
+        lines.append(self.message.split(".")[0].strip() + ".")
+        return [ln for ln in dict.fromkeys(lines) if ln][:3]
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "class_id": self.class_id,
@@ -143,6 +177,7 @@ class Advisory:
             "ipm": list(self.ipm),
             "chemical_guidance": self.chemical_guidance,
             "irrigation_advice": self.irrigation_advice,
+            "irrigation_constraint": self.irrigation_constraint.to_dict(),
             "escalate_if": self.escalate_if,
             "recheck_hours": self.recheck_hours,
             "confidence": self.confidence,
@@ -303,6 +338,9 @@ class AdvisoryEngine:
             ipm=list(base.get("ipm", [])),
             chemical_guidance=base.get("chemical_guidance", ""),
             irrigation_advice=base.get("irrigation_advice", ""),
+            irrigation_constraint=self._irrigation_constraint(
+                crop_class, base, urgency
+            ),
             escalate_if=base.get("escalate_if", ""),
             recheck_hours=int(base.get("recheck_hours", 48)),
             confidence=confidence,
@@ -318,6 +356,35 @@ class AdvisoryEngine:
         return self._unknown_advisory(None, top_candidates)
 
     # -- internals -------------------------------------------------------
+    def _irrigation_constraint(
+        self, crop_class, base: dict, urgency: str
+    ) -> IrrigationConstraint:
+        """Formalise ``irrigation_advice`` into something a state machine can act on.
+
+        The prose stays for the farmer; the flags go to the irrigation engine,
+        which is the only component allowed to decide how much water and for
+        how long. Anything not in the vocabulary raises here rather than being
+        dropped - a typo'd flag that silently does nothing would leave the
+        engine watering a waterlogged field with nothing to show for it.
+        """
+        flags = validate_flags(base.get("irrigation_constraint", ()))
+        status = base.get("water_status_evidence")
+        if not flags and status is None:
+            return NO_CONSTRAINT
+
+        # The constraint lives as long as the advisory's own recheck interval,
+        # but no longer than MAX_TTL_HOURS - a photo from last week must not
+        # still be shaping today's schedule, however slowly the underlying
+        # problem develops.
+        ttl = min(int(base.get("recheck_hours", 48)) or 48, MAX_TTL_HOURS)
+        return IrrigationConstraint(
+            flags=flags,
+            reasons=(crop_class.display_name,),
+            water_status_evidence=status,
+            ttl_hours=ttl,
+            priority=URGENCY_ORDER.index(urgency),
+        )
+
     def _compose_message(self, crop_class, base: dict) -> str:
         """Fallback farmer message built from the taxonomy entry itself.
 
@@ -393,6 +460,7 @@ def default_engine() -> AdvisoryEngine:
 __all__ = [
     "Advisory",
     "AdvisoryEngine",
+    "IrrigationConstraint",
     "URGENCY_ORDER",
     "DEFAULT_MIN_CONFIDENCE",
     "DEFAULT_HIGH_CONFIDENCE",
